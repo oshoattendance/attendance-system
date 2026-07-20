@@ -1287,10 +1287,15 @@ def logout():
     return redirect(url_for('login'))
 
 
-if __name__ == '__main__':
+# Initialize database on startup
+try:
     from database import init_db
     init_db()
     os.makedirs('static/photos', exist_ok=True)
     os.makedirs('static/profiles', exist_ok=True)
-    os.makedirs('static/uploads', exist_ok=True)
+    print("✅ Database ready")
+except Exception as e:
+    print(f"Init error: {e}")
+
+if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
