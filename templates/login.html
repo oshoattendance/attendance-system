@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Attendance System</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:'Segoe UI',sans-serif;background:linear-gradient(135deg,#667eea,#764ba2);
+             min-height:100vh;display:flex;justify-content:center;align-items:center;padding:20px}
+        .card{background:white;border-radius:20px;padding:40px;width:420px;
+              box-shadow:0 20px 60px rgba(0,0,0,0.3);animation:up .5s ease}
+        @keyframes up{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
+        .logo{text-align:center;margin-bottom:25px}
+        .logo i{font-size:55px;color:#667eea}
+        .logo h1{font-size:24px;color:#333;margin:10px 0 5px}
+        .logo p{color:#888;font-size:14px}
+        .time-box{text-align:center;background:#f8f9fa;padding:12px;border-radius:10px;
+                  margin-bottom:20px;font-weight:600;color:#667eea;font-size:15px}
+        .form-group{margin-bottom:18px;position:relative}
+        .form-group i{position:absolute;left:15px;top:50%;transform:translateY(-50%);color:#667eea}
+        .form-group input{width:100%;padding:14px 14px 14px 44px;border:2px solid #e0e0e0;
+                          border-radius:10px;font-size:15px;transition:.3s}
+        .form-group input:focus{border-color:#667eea;outline:none;box-shadow:0 0 10px rgba(102,126,234,.2)}
+        .btn{width:100%;padding:14px;background:linear-gradient(135deg,#667eea,#764ba2);
+             color:white;border:none;border-radius:10px;font-size:17px;cursor:pointer;
+             transition:.3s;font-weight:600}
+        .btn:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(102,126,234,.4)}
+        .links{text-align:center;margin-top:18px}
+        .links a{color:#667eea;text-decoration:none;font-weight:600}
+        .flash{padding:10px 15px;border-radius:8px;margin-bottom:12px;font-size:14px}
+        .success{background:#d4edda;color:#155724}
+        .error{background:#f8d7da;color:#721c24}
+        .warning{background:#fff3cd;color:#856404}
+        .office-info{background:#e8f4fd;padding:10px 15px;border-radius:8px;
+                     margin-bottom:15px;font-size:13px;color:#0066cc;text-align:center}
+    </style>
+</head>
+<body>
+<div class="card">
+    <div class="logo">
+        <i class="fas fa-fingerprint"></i>
+        <h1>Attendance System</h1>
+        <p>Employee Punch In/Out Portal</p>
+    </div>
+    <div class="time-box" id="timeBox"></div>
+    <div class="office-info">
+        <i class="fas fa-clock"></i> Office Time: 10:30 AM |
+        Grace: till 10:45 AM | Late: 10:45-11:00 | Half Day: After 11:00
+    </div>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}{% for cat,msg in messages %}
+    <div class="flash {{cat}}">{{msg}}</div>
+    {% endfor %}{% endif %}{% endwith %}
+    <form method="POST">
+        <div class="form-group">
+            <i class="fas fa-id-badge"></i>
+            <input type="text" name="emp_id" placeholder="Employee ID" required>
+        </div>
+        <div class="form-group">
+            <i class="fas fa-lock"></i>
+            <input type="password" name="password" placeholder="Password" required>
+        </div>
+        <button type="submit" class="btn">
+            <i class="fas fa-sign-in-alt"></i> Login
+        </button>
+    </form>
+    <div class="links">
+        <p>New Employee? <a href="/register">Register Here</a></p>
+    </div>
+</div>
+<script>
+function updateTime(){
+    const n=new Date();
+    document.getElementById('timeBox').textContent=
+        n.toLocaleDateString('en-IN',{weekday:'long',year:'numeric',month:'long',day:'numeric'})+
+        ' | '+n.toLocaleTimeString('en-IN');
+}
+setInterval(updateTime,1000);updateTime();
+</script>
+</body>
+</html>

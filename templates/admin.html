@@ -1,0 +1,1811 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - {{ settings['company_name'] if settings else 'Osho Industries Limited' }}</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --primary: #e11d48;
+            --primary-light: #f97316;
+            --bg-main: #f3f6fb;
+            --bg-card: #ffffff;
+            --bg-sidebar: linear-gradient(180deg, #1e293b, #0f172a);
+            --bg-header: linear-gradient(135deg, #e11d48, #ef4444, #f97316);
+            --bg-hover: #fff7f8;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --text-light: #94a3b8;
+            --border-color: #e2e8f0;
+            --shadow: 0 5px 20px rgba(0,0,0,0.08);
+        }
+        [data-theme="blue"] { --primary: #2563eb; --primary-light: #3b82f6; --bg-header: linear-gradient(135deg, #1e40af, #2563eb, #3b82f6); --bg-hover: #eff6ff; }
+        [data-theme="green"] { --primary: #059669; --primary-light: #10b981; --bg-header: linear-gradient(135deg, #047857, #059669, #10b981); --bg-hover: #f0fdf4; }
+        [data-theme="purple"] { --primary: #7c3aed; --primary-light: #a855f7; --bg-header: linear-gradient(135deg, #6d28d9, #7c3aed, #a855f7); --bg-hover: #faf5ff; }
+        [data-theme="orange"] { --primary: #ea580c; --primary-light: #f97316; --bg-header: linear-gradient(135deg, #c2410c, #ea580c, #f97316); --bg-hover: #fff7ed; }
+        [data-mode="dark"] {
+            --bg-main: #0f172a; --bg-card: #1e293b; --bg-hover: #334155;
+            --text-primary: #f1f5f9; --text-secondary: #cbd5e1;
+            --text-light: #94a3b8; --border-color: #334155;
+            --shadow: 0 5px 20px rgba(0,0,0,0.3);
+        }
+
+        body {
+            font-family: "Segoe UI", Arial, sans-serif;
+            background: var(--bg-main);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+        }
+
+        .sidebar {
+            width: 260px;
+            background: var(--bg-sidebar);
+            color: white;
+            height: 100vh;
+            position: fixed;
+            left: 0; top: 0;
+            overflow-y: auto;
+            z-index: 1000;
+            transition: transform 0.3s ease;
+        }
+        .sidebar.hidden { transform: translateX(-260px); }
+
+        .sidebar-header {
+            padding: 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .company-logo {
+            text-align: center;
+            padding: 15px 10px;
+            background: var(--bg-header);
+            border-radius: 12px;
+            margin-bottom: 15px;
+        }
+        .company-logo h2 {
+            font-size: 15px;
+            font-weight: 800;
+            color: white;
+            line-height: 1.3;
+        }
+        .company-logo p {
+            font-size: 10px;
+            color: rgba(255,255,255,0.8);
+            margin-top: 3px;
+        }
+        .sidebar-user {
+            display: flex; align-items: center; gap: 12px;
+        }
+        .sidebar-icon {
+            width: 44px; height: 44px;
+            background: var(--bg-header);
+            border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 22px;
+        }
+        .sidebar-user-info h3 { font-size: 14px; font-weight: 800; }
+        .sidebar-user-info p { font-size: 11px; opacity: 0.7; }
+
+        .sidebar-menu { padding: 15px 0; }
+        .menu-title {
+            font-size: 11px;
+            color: #64748b;
+            padding: 15px 20px 8px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .menu-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 20px;
+            color: #cbd5e1;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 600;
+            border-left: 3px solid transparent;
+            transition: all 0.2s;
+        }
+        .menu-item:hover {
+            background: rgba(255,255,255,0.05);
+            color: white;
+            border-left-color: var(--primary);
+        }
+        .menu-item.active {
+            background: rgba(225,29,72,0.15);
+            color: white;
+            border-left-color: var(--primary);
+        }
+        .menu-item i { width: 20px; font-size: 15px; }
+        .menu-badge {
+            margin-left: auto;
+            background: var(--primary);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 10px;
+            font-weight: 800;
+        }
+
+        .main-wrapper {
+            flex: 1;
+            margin-left: 260px;
+            min-height: 100vh;
+            transition: margin-left 0.3s ease;
+        }
+        .main-wrapper.full { margin-left: 0; }
+
+        .top-bar {
+            background: var(--bg-card);
+            padding: 15px 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            border-bottom: 1px solid var(--border-color);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .top-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex: 1;
+        }
+
+        .sidebar-toggle {
+            background: var(--bg-hover);
+            border: 1px solid var(--border-color);
+            width: 40px; height: 40px;
+            border-radius: 10px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--primary);
+            font-size: 18px;
+        }
+        .sidebar-toggle:hover { background: var(--primary); color: white; }
+
+        .company-title {
+            font-size: 18px;
+            font-weight: 800;
+        }
+        .company-title span { color: var(--primary); }
+
+        .top-actions {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .theme-controls {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+            background: var(--bg-hover);
+            padding: 6px 10px;
+            border-radius: 10px;
+        }
+        .theme-btn {
+            width: 24px; height: 24px;
+            border-radius: 50%;
+            border: 2px solid white;
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+        }
+        .theme-btn:hover { transform: scale(1.15); }
+        .theme-btn.red { background: linear-gradient(135deg, #e11d48, #f97316); }
+        .theme-btn.blue { background: linear-gradient(135deg, #2563eb, #3b82f6); }
+        .theme-btn.green { background: linear-gradient(135deg, #059669, #10b981); }
+        .theme-btn.purple { background: linear-gradient(135deg, #7c3aed, #a855f7); }
+        .theme-btn.orange { background: linear-gradient(135deg, #ea580c, #f97316); }
+
+        .mode-toggle {
+            background: var(--bg-hover);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            width: 40px; height: 40px;
+            border-radius: 10px;
+            cursor: pointer;
+        }
+
+        /* NOTIFICATION BELL */
+        .notification-bell {
+            position: relative;
+            background: var(--bg-hover);
+            border: 1px solid var(--border-color);
+            width: 40px; height: 40px;
+            border-radius: 10px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--primary);
+            font-size: 18px;
+        }
+        .notification-count {
+            position: absolute;
+            top: -5px; right: -5px;
+            background: #dc2626;
+            color: white;
+            font-size: 10px;
+            font-weight: 800;
+            min-width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid var(--bg-card);
+        }
+        .notification-dropdown {
+            display: none;
+            position: absolute;
+            top: 55px;
+            right: 0;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            width: 380px;
+            max-height: 500px;
+            overflow-y: auto;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            z-index: 1000;
+        }
+        .notification-dropdown.active { display: block; }
+        .notification-header {
+            padding: 15px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--bg-header);
+            color: white;
+            border-radius: 12px 12px 0 0;
+        }
+        .notification-header h3 { font-size: 15px; }
+        .mark-all-read {
+            color: white;
+            text-decoration: none;
+            font-size: 11px;
+            background: rgba(255,255,255,0.2);
+            padding: 5px 10px;
+            border-radius: 6px;
+        }
+        .notification-item {
+            padding: 15px;
+            border-bottom: 1px solid var(--border-color);
+            cursor: pointer;
+            display: flex;
+            gap: 12px;
+        }
+        .notification-item:hover { background: var(--bg-hover); }
+        .notification-item.unread { background: var(--bg-hover); border-left: 4px solid var(--primary); }
+        .notification-icon-small {
+            width: 40px; height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 16px;
+        }
+        .notif-info { background: #2563eb; }
+        .notif-success { background: #059669; }
+        .notif-warning { background: #f59e0b; }
+        .notif-error { background: #dc2626; }
+        .notif-high { background: #dc2626; }
+        .notif-medium { background: #f59e0b; }
+        .notif-low { background: #059669; }
+        .notification-content { flex: 1; }
+        .notification-content h4 { font-size: 13px; margin-bottom: 3px; }
+        .notification-content p { font-size: 12px; color: var(--text-secondary); margin-bottom: 3px; }
+        .notification-content small { font-size: 10px; color: var(--text-light); }
+
+        .admin-profile {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: var(--bg-hover);
+            padding: 6px 12px;
+            border-radius: 10px;
+        }
+        .admin-avatar {
+            width: 36px; height: 36px;
+            border-radius: 50%;
+            background: var(--bg-header);
+            color: white;
+            display: flex; justify-content: center; align-items: center;
+            font-weight: 800;
+        }
+        .admin-profile strong { display: block; font-size: 13px; color: var(--text-primary); }
+        .admin-profile small { display: block; font-size: 10px; color: var(--text-secondary); }
+
+        .sync-btn, .logout-btn {
+            color: white;
+            text-decoration: none;
+            padding: 10px 15px;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 800;
+            border: none;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .sync-btn { background: linear-gradient(135deg, #10b981, #22c55e); }
+        .logout-btn { background: linear-gradient(135deg, #dc2626, #ef4444); }
+        .sync-btn:hover, .logout-btn:hover { transform: translateY(-2px); }
+
+        .content-area {
+            padding: 25px;
+            max-width: 1400px;
+            margin: auto;
+        }
+
+        .flash {
+            padding: 13px 16px;
+            border-radius: 11px;
+            margin-bottom: 18px;
+            font-size: 13px;
+            font-weight: 700;
+        }
+        .flash.success { color: #065f46; background: #d1fae5; border-left: 5px solid #10b981; }
+        .flash.error { color: #991b1b; background: #fee2e2; border-left: 5px solid #ef4444; }
+        .flash.warning { color: #92400e; background: #fef3c7; border-left: 5px solid #f59e0b; }
+
+        .dashboard-hero {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 20px;
+            padding: 25px;
+            border-radius: 20px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow);
+            margin-bottom: 22px;
+            flex-wrap: wrap;
+        }
+        .hero-icon {
+            font-size: 60px;
+            background: var(--bg-header);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .dashboard-hero h2 { font-size: 24px; margin-bottom: 5px; }
+        .dashboard-hero h2 span { color: var(--primary); }
+        .dashboard-hero p { font-size: 13px; color: var(--text-secondary); }
+
+        .today-chip {
+            background: var(--bg-header);
+            color: white;
+            border-radius: 14px;
+            padding: 14px 20px;
+            text-align: center;
+            min-width: 200px;
+        }
+        .today-chip small { font-size: 11px; opacity: 0.88; display: block; margin-bottom: 5px; }
+        .today-chip strong { font-size: 18px; }
+
+        .rules-card {
+            background: linear-gradient(135deg, #1e40af, #4f46e5);
+            color: white; padding: 20px; border-radius: 15px;
+            margin-bottom: 22px;
+        }
+        .rules-card h3 { font-size: 18px; margin-bottom: 15px; display: flex; align-items: center; gap: 10px; }
+        .rules-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+        .rule-item {
+            background: rgba(255,255,255,0.15);
+            padding: 12px; border-radius: 10px;
+            display: flex; align-items: center; gap: 10px;
+        }
+        .rule-item i { font-size: 20px; }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+            margin-bottom: 22px;
+        }
+        .stat-card {
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: var(--shadow);
+        }
+        .stat-card::after {
+            content: ""; position: absolute;
+            width: 110px; height: 110px; border-radius: 50%;
+            background: rgba(255,255,255,0.12);
+            top: -35px; right: -30px;
+        }
+        .stat-icon { font-size: 26px; margin-bottom: 10px; }
+        .stat-number { font-size: 30px; font-weight: 800; }
+        .stat-label { font-size: 12px; margin-top: 3px; opacity: 0.92; }
+        .stat-total { background: linear-gradient(135deg, #2563eb, #4f46e5); }
+        .stat-present { background: linear-gradient(135deg, #059669, #22c55e); }
+        .stat-absent { background: linear-gradient(135deg, #dc2626, #f97316); }
+        .stat-late { background: linear-gradient(135deg, #d97706, #f59e0b); }
+        .stat-halfday { background: linear-gradient(135deg, #7c3aed, #a855f7); }
+        .stat-inactive { background: linear-gradient(135deg, #64748b, #475569); }
+
+        .eom-card {
+            background: linear-gradient(135deg, #fbbf24, #f59e0b, #d97706);
+            color: white; padding: 25px; border-radius: 20px;
+            margin-bottom: 22px;
+            display: flex; align-items: center; gap: 20px;
+            box-shadow: 0 10px 30px rgba(217, 119, 6, 0.3);
+        }
+        .eom-trophy {
+            font-size: 60px; background: rgba(255,255,255,0.2);
+            width: 100px; height: 100px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            border: 4px solid white;
+        }
+        .eom-info h2 { font-size: 20px; margin-bottom: 5px; }
+        .eom-info h3 { font-size: 26px; margin-bottom: 5px; }
+
+        .charts-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; margin-bottom: 22px; }
+        .chart-card {
+            background: var(--bg-card); border-radius: 18px; padding: 22px;
+            box-shadow: var(--shadow); border: 1px solid var(--border-color);
+        }
+        .chart-card h3 { font-size: 17px; margin-bottom: 15px; display: flex; align-items: center; gap: 8px; }
+        .charts-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 22px; }
+        .chart-container { position: relative; height: 300px; }
+
+        .content-card {
+            background: var(--bg-card); border-radius: 18px; padding: 22px;
+            margin-bottom: 22px; box-shadow: var(--shadow);
+            overflow-x: auto; border: 1px solid var(--border-color);
+        }
+        .card-title-row {
+            display: flex; justify-content: space-between; align-items: center;
+            gap: 15px; margin-bottom: 15px; flex-wrap: wrap;
+        }
+        .card-title { display: flex; align-items: center; gap: 9px; font-size: 18px; font-weight: 800; }
+        .mini-label {
+            background: var(--bg-hover); color: var(--primary);
+            padding: 6px 11px; border-radius: 20px;
+            font-size: 11px; font-weight: 800;
+        }
+
+        table {
+            width: 100%; min-width: 800px;
+            border-collapse: separate !important;
+            border-spacing: 0 !important;
+            border: 1px solid var(--border-color) !important;
+            border-radius: 14px !important;
+            overflow: hidden !important;
+            background: var(--bg-card) !important;
+        }
+        table thead th {
+            background: var(--bg-header) !important;
+            color: white !important;
+            font-size: 12px !important;
+            font-weight: 900 !important;
+            padding: 15px 13px !important;
+            white-space: nowrap !important;
+            text-transform: uppercase !important;
+        }
+        table thead th:first-child { border-top-left-radius: 13px; }
+        table thead th:last-child { border-top-right-radius: 13px; }
+        table tbody td {
+            padding: 12px 13px !important;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 13px;
+        }
+        tbody tr:hover td { background: var(--bg-hover); }
+
+        .emp-name { font-weight: 800; }
+        .muted-text { font-size: 11px; color: var(--text-light); }
+
+        .photo-thumb {
+            width: 40px; height: 40px; border-radius: 50%;
+            object-fit: cover; cursor: pointer;
+            border: 3px solid var(--primary-light);
+        }
+
+        .badge {
+            display: inline-flex; align-items: center; gap: 4px;
+            border-radius: 20px; padding: 5px 10px;
+            font-size: 10px; font-weight: 800;
+        }
+        .status-present, .status-approved, .status-active, .status-accepted, .status-resolved { color: #047857; background: #d1fae5; }
+        .status-late, .status-pending, .status-open { color: #b45309; background: #fef3c7; }
+        .status-absent, .status-rejected, .status-inactive { color: #b91c1c; background: #fee2e2; }
+        .status-leave { color: #1d4ed8; background: #dbeafe; }
+        .status-half_day { color: #7c2d12; background: #fed7aa; }
+        .role-admin, .leave-type { color: #6d28d9; background: #ede9fe; }
+        .role-employee { color: #0369a1; background: #e0f2fe; }
+        .priority-high { color: #b91c1c; background: #fee2e2; }
+        .priority-medium { color: #b45309; background: #fef3c7; }
+        .priority-low { color: #047857; background: #d1fae5; }
+
+        .late-dot { display: inline-block; width: 12px; height: 12px; border-radius: 50%; background: #dc2626; }
+
+        .action-btn {
+            border: none; color: white;
+            text-decoration: none; cursor: pointer;
+            border-radius: 7px; padding: 7px 12px;
+            font-size: 11px; font-weight: 800;
+            display: inline-block; margin: 2px;
+        }
+        .btn-edit { background: linear-gradient(135deg, #4f46e5, #7c3aed); }
+        .btn-delete, .btn-reject { background: linear-gradient(135deg, #dc2626, #f43f5e); }
+        .btn-approve, .btn-active { background: linear-gradient(135deg, #059669, #22c55e); }
+        .btn-download { background: linear-gradient(135deg, #0284c7, #2563eb); }
+        .btn-add { background: linear-gradient(135deg, #059669, #22c55e); }
+        .btn-inactive { background: linear-gradient(135deg, #64748b, #475569); }
+        .btn-reply { background: linear-gradient(135deg, #7c3aed, #a855f7); }
+
+        .filter-box {
+            display: flex; gap: 12px; flex-wrap: wrap; align-items: end;
+            background: var(--bg-hover); padding: 16px; border-radius: 13px;
+            margin-bottom: 17px; border: 1px solid var(--border-color);
+        }
+        .filter-group { flex: 1; min-width: 155px; }
+        .filter-group label {
+            display: block; font-size: 11px; font-weight: 800;
+            color: var(--text-secondary); margin-bottom: 5px;
+        }
+        .filter-group input, .filter-group select {
+            width: 100%; border: 1px solid var(--border-color); border-radius: 8px;
+            padding: 9px 10px; font-size: 13px;
+            background: var(--bg-card); color: var(--text-primary);
+        }
+        .filter-btn {
+            border: none; border-radius: 8px; padding: 10px 17px;
+            color: white; font-size: 12px; font-weight: 800; cursor: pointer;
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+        }
+
+        .reports-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 18px;
+            margin-bottom: 22px;
+        }
+        .report-card {
+            background: var(--bg-card);
+            border: 2px solid var(--border-color);
+            border-radius: 15px;
+            padding: 22px;
+            text-align: center;
+            transition: all 0.3s;
+        }
+        .report-card:hover {
+            border-color: var(--primary);
+            transform: translateY(-5px);
+        }
+        .report-icon {
+            width: 70px; height: 70px;
+            margin: 0 auto 15px;
+            border-radius: 15px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 30px; color: white;
+        }
+        .report-card h4 { font-size: 16px; margin-bottom: 8px; }
+        .report-card p { font-size: 12px; color: var(--text-secondary); margin-bottom: 15px; }
+
+        .settings-wrap { max-width: 800px; }
+        .settings-section-title {
+            margin: 22px 0 13px; padding-top: 18px;
+            border-top: 1px solid var(--border-color);
+            font-size: 16px; font-weight: 800;
+        }
+        .settings-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; }
+        .form-group { margin-bottom: 14px; }
+        .form-group label {
+            display: block; margin-bottom: 6px;
+            color: var(--text-secondary); font-size: 13px; font-weight: 800;
+        }
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%; padding: 11px 12px;
+            border: 2px solid var(--border-color); border-radius: 9px;
+            font-size: 13px; background: var(--bg-card); color: var(--text-primary);
+            font-family: inherit;
+        }
+        .form-hint { margin-top: 5px; color: var(--text-light); font-size: 11px; }
+        .save-btn {
+            border: none; border-radius: 10px; padding: 12px 22px;
+            color: white; font-size: 13px; font-weight: 800; cursor: pointer;
+            background: linear-gradient(135deg, #059669, #22c55e);
+        }
+
+        .salary-card {
+            background: var(--bg-card); padding: 20px; border-radius: 15px;
+            margin-bottom: 15px; border: 2px solid var(--border-color);
+        }
+        .salary-header {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 15px; padding-bottom: 12px;
+            border-bottom: 2px solid var(--border-color);
+        }
+        .salary-details {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 12px;
+        }
+        .salary-item { padding: 10px; background: var(--bg-hover); border-radius: 8px; }
+        .salary-item label { font-size: 11px; color: var(--text-secondary); display: block; margin-bottom: 3px; }
+        .salary-item strong { font-size: 16px; }
+        .salary-total { background: linear-gradient(135deg, #059669, #10b981); color: white; }
+        .salary-total label { color: rgba(255,255,255,0.9); }
+
+        .modal-overlay {
+            display: none; position: fixed; inset: 0;
+            padding: 18px; background: rgba(15,23,42,0.62);
+            z-index: 2000; justify-content: center; align-items: center;
+        }
+        .modal-overlay.active { display: flex; }
+        .modal {
+            width: 580px; max-width: 100%;
+            max-height: 92vh; overflow-y: auto;
+            background: var(--bg-card); border-radius: 18px; padding: 25px;
+        }
+        .modal-header {
+            display: flex; justify-content: space-between;
+            margin-bottom: 18px; padding-bottom: 12px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .close-btn {
+            border: none; background: #fee2e2; color: #dc2626;
+            width: 32px; height: 32px; border-radius: 50%; cursor: pointer;
+        }
+        .modal-actions { display: flex; gap: 10px; margin-top: 18px; }
+        .modal-actions button {
+            flex: 1; border: none; color: white;
+            border-radius: 9px; padding: 11px;
+            cursor: pointer; font-weight: 800;
+        }
+        .modal-save { background: linear-gradient(135deg, #059669, #22c55e); }
+        .modal-cancel { background: #64748b; }
+
+        .empty-box { text-align: center; padding: 30px; color: var(--text-light); }
+
+        .complaint-card {
+            background: var(--bg-hover);
+            padding: 15px; border-radius: 12px;
+            margin-bottom: 12px;
+            border-left: 4px solid var(--primary);
+        }
+        .complaint-header {
+            display: flex; justify-content: space-between;
+            margin-bottom: 8px; flex-wrap: wrap; gap: 10px;
+        }
+        .complaint-body { font-size: 13px; color: var(--text-secondary); margin-bottom: 10px; }
+        .complaint-reply {
+            background: var(--bg-card); padding: 12px;
+            border-radius: 8px; margin-top: 10px;
+            border-left: 3px solid #10b981;
+        }
+
+        @media (max-width: 1024px) {
+            .charts-grid { grid-template-columns: 1fr; }
+            .charts-row-2 { grid-template-columns: 1fr; }
+        }
+        @media (max-width: 850px) {
+            .sidebar { transform: translateX(-100%); }
+            .sidebar.active { transform: translateX(0); }
+            .main-wrapper { margin-left: 0; }
+            .settings-grid { grid-template-columns: 1fr; }
+            .dashboard-hero { flex-direction: column; text-align: center; }
+            .admin-profile { display: none; }
+            .notification-dropdown { width: 300px; right: -50px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="company-logo">
+                <h2><i class="fas fa-industry"></i> {{ settings['company_name'] if settings else 'Osho Industries Limited' }}</h2>
+                <p>Attendance Management System</p>
+            </div>
+            <div class="sidebar-user">
+                <div class="sidebar-icon"><i class="fas fa-shield-alt"></i></div>
+                <div class="sidebar-user-info">
+                    <h3>{{ session['name'] }}</h3>
+                    <p>Administrator</p>
+                </div>
+            </div>
+        </div>
+
+        <nav class="sidebar-menu">
+            <div class="menu-title">Main</div>
+            <a href="{{ url_for('admin_dashboard', tab='today') }}" class="menu-item {% if tab == 'today' %}active{% endif %}">
+                <i class="fas fa-calendar-day"></i> Today
+            </a>
+            <a href="{{ url_for('admin_dashboard', tab='analytics') }}" class="menu-item {% if tab == 'analytics' %}active{% endif %}">
+                <i class="fas fa-chart-pie"></i> Analytics
+            </a>
+
+            <div class="menu-title">Employees</div>
+            <a href="{{ url_for('admin_dashboard', tab='employees') }}" class="menu-item {% if tab == 'employees' %}active{% endif %}">
+                <i class="fas fa-users"></i> Employees
+            </a>
+            <a href="{{ url_for('admin_dashboard', tab='monthly') }}" class="menu-item {% if tab == 'monthly' %}active{% endif %}">
+                <i class="fas fa-calendar-alt"></i> Monthly
+            </a>
+
+            <div class="menu-title">Requests</div>
+            <a href="{{ url_for('admin_dashboard', tab='leaves') }}" class="menu-item {% if tab == 'leaves' %}active{% endif %}">
+                <i class="fas fa-umbrella-beach"></i> Leaves
+                {% if pending_leaves > 0 %}<span class="menu-badge">{{ pending_leaves }}</span>{% endif %}
+            </a>
+            <a href="{{ url_for('admin_dashboard', tab='short_leaves') }}" class="menu-item {% if tab == 'short_leaves' %}active{% endif %}">
+                <i class="fas fa-hourglass-half"></i> Short Leaves
+                {% if pending_short > 0 %}<span class="menu-badge">{{ pending_short }}</span>{% endif %}
+            </a>
+            <a href="{{ url_for('admin_dashboard', tab='complaints') }}" class="menu-item {% if tab == 'complaints' %}active{% endif %}">
+                <i class="fas fa-comment-alt"></i> Complaints
+                {% if open_complaints > 0 %}<span class="menu-badge">{{ open_complaints }}</span>{% endif %}
+            </a>
+            <a href="{{ url_for('admin_dashboard', tab='resignations') }}" class="menu-item {% if tab == 'resignations' %}active{% endif %}">
+                <i class="fas fa-door-open"></i> Resignations
+                {% if pending_resignations > 0 %}<span class="menu-badge">{{ pending_resignations }}</span>{% endif %}
+            </a>
+
+            <div class="menu-title">Management</div>
+            <a href="{{ url_for('admin_dashboard', tab='salary') }}" class="menu-item {% if tab == 'salary' %}active{% endif %}">
+                <i class="fas fa-money-bill-wave"></i> Salary
+            </a>
+            <a href="{{ url_for('admin_dashboard', tab='holidays') }}" class="menu-item {% if tab == 'holidays' %}active{% endif %}">
+                <i class="fas fa-calendar-star"></i> Holidays
+            </a>
+            <a href="{{ url_for('admin_dashboard', tab='reports') }}" class="menu-item {% if tab == 'reports' %}active{% endif %}">
+                <i class="fas fa-file-excel"></i> Reports
+            </a>
+            <a href="{{ url_for('admin_dashboard', tab='settings') }}" class="menu-item {% if tab == 'settings' %}active{% endif %}">
+                <i class="fas fa-cog"></i> Settings
+            </a>
+        </nav>
+    </aside>
+
+    <!-- MAIN WRAPPER -->
+    <div class="main-wrapper" id="mainWrapper">
+        <div class="top-bar">
+            <div class="top-left">
+                <button class="sidebar-toggle" onclick="toggleSidebar()" title="Toggle Menu">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <div class="company-title">
+                    <span>{{ settings['company_name'] if settings else 'Osho Industries Limited' }}</span>
+                </div>
+            </div>
+            <div class="top-actions">
+                <div class="theme-controls">
+                    <div class="theme-btn red" onclick="setTheme('red')" title="Red"></div>
+                    <div class="theme-btn blue" onclick="setTheme('blue')" title="Blue"></div>
+                    <div class="theme-btn green" onclick="setTheme('green')" title="Green"></div>
+                    <div class="theme-btn purple" onclick="setTheme('purple')" title="Purple"></div>
+                    <div class="theme-btn orange" onclick="setTheme('orange')" title="Orange"></div>
+                </div>
+                <button class="mode-toggle" onclick="toggleMode()" title="Dark/Light">
+                    <i class="fas fa-moon" id="modeIcon"></i>
+                </button>
+
+                <!-- NOTIFICATION BELL -->
+                <div style="position: relative;">
+                    <button class="notification-bell" onclick="toggleNotifications()" title="Notifications">
+                        <i class="fas fa-bell"></i>
+                        {% if admin_unread_count > 0 %}
+                        <span class="notification-count">{{ admin_unread_count }}</span>
+                        {% endif %}
+                    </button>
+                    <div class="notification-dropdown" id="notificationDropdown">
+                        <div class="notification-header">
+                            <h3><i class="fas fa-bell"></i> Notifications ({{ admin_unread_count }})</h3>
+                            {% if admin_notifications %}
+                            <a href="/mark_all_read" class="mark-all-read">Mark all read</a>
+                            {% endif %}
+                        </div>
+                        {% for n in admin_notifications %}
+                        <a href="/mark_notification_read/{{ n['id'] }}" style="text-decoration:none;color:inherit;">
+                            <div class="notification-item {% if not n['is_read'] %}unread{% endif %}">
+                                <div class="notification-icon-small notif-{{ n['type'] }}">
+                                    <i class="fas fa-{% if n['type'] == 'success' %}check{% elif n['type'] == 'error' %}times{% elif n['type'] == 'warning' %}exclamation{% else %}info{% endif %}"></i>
+                                </div>
+                                <div class="notification-content">
+                                    <h4>{{ n['title'] }}</h4>
+                                    <p>{{ n['message'] }}</p>
+                                    <small>{{ n['created_at'] }}</small>
+                                </div>
+                            </div>
+                        </a>
+                        {% endfor %}
+                        {% if not admin_notifications %}
+                        <div class="empty-box">
+                            <i class="fas fa-bell-slash" style="font-size:30px;"></i>
+                            <p style="margin-top:10px;">No notifications</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="admin-profile">
+                    <div class="admin-avatar">{{ session['name'][0] | upper }}</div>
+                    <div>
+                        <strong>{{ session['name'] }}</strong>
+                        <small>Admin</small>
+                    </div>
+                </div>
+                <a href="/admin/sync_google_sheet" class="sync-btn"><i class="fas fa-sync-alt"></i> Sync</a>
+                <a href="/logout" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a>
+            </div>
+        </div>
+
+        <main class="content-area">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="flash {{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+            {% endwith %}
+                        {% if tab == 'today' %}
+            <section class="dashboard-hero">
+                <div style="display:flex;align-items:center;gap:20px;">
+                    <div class="hero-icon"><i class="fas fa-tachometer-alt"></i></div>
+                    <div>
+                        <h2>Welcome, <span>{{ session['name'] }}</span> 👋</h2>
+                        <p><i class="fas fa-industry"></i> {{ settings['company_name'] }}</p>
+                    </div>
+                </div>
+                <div class="today-chip">
+                    <small><i class="fas fa-calendar-check"></i> TODAY</small>
+                    <strong>{{ today }}</strong>
+                </div>
+            </section>
+
+            <div class="rules-card">
+                <h3><i class="fas fa-clipboard-list"></i> Office Rules</h3>
+                <div class="rules-grid">
+                    <div class="rule-item"><i class="fas fa-check-circle" style="color:#22c55e;"></i><div><strong>10:30-10:40 AM</strong><br><small>PRESENT</small></div></div>
+                    <div class="rule-item"><i class="fas fa-exclamation-circle" style="color:#f59e0b;"></i><div><strong>10:41-11:00 AM</strong><br><small>LATE + Dot</small></div></div>
+                    <div class="rule-item"><i class="fas fa-times-circle" style="color:#ef4444;"></i><div><strong>After 11:00 AM</strong><br><small>HALF DAY</small></div></div>
+                    <div class="rule-item"><i class="fas fa-circle" style="color:#dc2626;"></i><div><strong>4 Dots = 1 Leave</strong><br><small>Deduction</small></div></div>
+                </div>
+            </div>
+
+            {% if eom_data %}
+            <div class="eom-card">
+                <div class="eom-trophy"><i class="fas fa-trophy"></i></div>
+                <div class="eom-info">
+                    <h2>🏆 EMPLOYEE OF THE MONTH</h2>
+                    <h3>{{ eom_data['name'] }}</h3>
+                    <p><i class="fas fa-building"></i> {{ eom_data['department'] }} | <i class="fas fa-check-circle"></i> {{ eom_data['on_time'] }} on-time</p>
+                </div>
+            </div>
+            {% endif %}
+
+            <section class="stats-grid">
+                <div class="stat-card stat-total">
+                    <div class="stat-icon"><i class="fas fa-users"></i></div>
+                    <div class="stat-number">{{ total_employees }}</div>
+                    <div class="stat-label">Active Employees</div>
+                </div>
+                <div class="stat-card stat-inactive">
+                    <div class="stat-icon"><i class="fas fa-user-slash"></i></div>
+                    <div class="stat-number">{{ inactive_employees }}</div>
+                    <div class="stat-label">Inactive</div>
+                </div>
+                <div class="stat-card stat-present">
+                    <div class="stat-icon"><i class="fas fa-user-check"></i></div>
+                    <div class="stat-number">{{ present_today }}</div>
+                    <div class="stat-label">Present Today</div>
+                </div>
+                <div class="stat-card stat-late">
+                    <div class="stat-icon"><i class="fas fa-clock"></i></div>
+                    <div class="stat-number">{{ late_today }}</div>
+                    <div class="stat-label">Late (Dots)</div>
+                </div>
+                <div class="stat-card stat-halfday">
+                    <div class="stat-icon"><i class="fas fa-adjust"></i></div>
+                    <div class="stat-number">{{ half_day_today }}</div>
+                    <div class="stat-label">Half Day</div>
+                </div>
+                <div class="stat-card stat-absent">
+                    <div class="stat-icon"><i class="fas fa-user-times"></i></div>
+                    <div class="stat-number">{{ absent_today }}</div>
+                    <div class="stat-label">Absent</div>
+                </div>
+            </section>
+
+            <section class="content-card">
+                <div class="card-title-row">
+                    <h3 class="card-title"><i class="fas fa-clipboard-check" style="color:var(--primary);"></i> Today's Attendance</h3>
+                    <span class="mini-label">{{ today }}</span>
+                </div>
+                <table>
+                    <thead>
+                        <tr><th>Photo</th><th>Emp ID</th><th>Name</th><th>Dept</th><th>In</th><th>Out</th><th>Hours</th><th>Dot</th><th>Status</th><th>Action</th></tr>
+                    </thead>
+                    <tbody>
+                        {% for r in today_attendance %}
+                        <tr>
+                            <td>
+                                {% if r['punch_in_photo'] %}
+                                <img src="{{ url_for('static', filename='photos/' ~ r['punch_in_photo']) }}" class="photo-thumb">
+                                {% else %}<i class="fas fa-user-circle" style="font-size:34px;color:#cbd5e1;"></i>{% endif %}
+                            </td>
+                            <td><strong>{{ r['emp_id'] }}</strong></td>
+                            <td class="emp-name">{{ r['name'] }}</td>
+                            <td>{{ r['department'] }}</td>
+                            <td>{{ r['punch_in'] or 'N/A' }}</td>
+                            <td>{{ r['punch_out'] or 'Working...' }}</td>
+                            <td>{{ r['total_hours'] or '-' }}</td>
+                            <td>{% if r['late_dot'] %}<span class="late-dot"></span>{% else %}-{% endif %}</td>
+                            <td><span class="badge status-{{ r['status'] }}">{{ r['status']|upper|replace('_', ' ') }}</span></td>
+                            <td>
+                                <button class="action-btn btn-edit" onclick='editAttendance({{ r["id"] }}, {{ (r["punch_in"] or "") | tojson }}, {{ (r["punch_out"] or "") | tojson }}, {{ r["status"] | tojson }})'>
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        {% if not today_attendance %}
+                        <tr><td colspan="10"><div class="empty-box"><i class="fas fa-calendar-times" style="font-size:30px;"></i><br>No records today</div></td></tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </section>
+            {% endif %}
+
+            {% if tab == 'analytics' %}
+            <section class="dashboard-hero">
+                <div style="display:flex;align-items:center;gap:20px;">
+                    <div class="hero-icon"><i class="fas fa-chart-pie"></i></div>
+                    <div><h2>Analytics <span>Dashboard</span></h2><p>Visual insights</p></div>
+                </div>
+            </section>
+            <div class="charts-grid">
+                <div class="chart-card">
+                    <h3><i class="fas fa-chart-bar" style="color:#4f46e5;"></i> Weekly Attendance</h3>
+                    <div class="chart-container"><canvas id="weeklyChart"></canvas></div>
+                </div>
+                <div class="chart-card">
+                    <h3><i class="fas fa-chart-pie" style="color:#e11d48;"></i> Today's Status</h3>
+                    <div class="chart-container"><canvas id="todayPieChart"></canvas></div>
+                </div>
+            </div>
+            <div class="charts-row-2">
+                <div class="chart-card">
+                    <h3><i class="fas fa-building" style="color:#059669;"></i> Departments</h3>
+                    <div class="chart-container"><canvas id="deptChart"></canvas></div>
+                </div>
+                <div class="chart-card">
+                    <h3><i class="fas fa-umbrella-beach" style="color:#f59e0b;"></i> Leave Types</h3>
+                    <div class="chart-container"><canvas id="leaveChart"></canvas></div>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if tab == 'employees' %}
+            <section class="dashboard-hero">
+                <div style="display:flex;align-items:center;gap:20px;">
+                    <div class="hero-icon"><i class="fas fa-users-cog"></i></div>
+                    <div><h2>Employee <span>Management</span></h2><p>Active/Inactive employees</p></div>
+                </div>
+                <a href="/register" class="action-btn btn-add" style="padding:12px 20px;font-size:13px;"><i class="fas fa-user-plus"></i> Add Employee</a>
+            </section>
+            <section class="content-card">
+                <div class="card-title-row">
+                    <h3 class="card-title"><i class="fas fa-users" style="color:var(--primary);"></i> All Employees</h3>
+                    <span class="mini-label">{{ employees|length }} Total | {{ total_employees }} Active</span>
+                </div>
+                <table>
+                    <thead>
+                        <tr><th>Emp ID</th><th>Name</th><th>Email</th><th>Phone</th><th>Dept</th><th>Designation</th><th>Salary</th><th>Status</th><th>Role</th><th>Actions</th></tr>
+                    </thead>
+                    <tbody>
+                        {% for emp in employees %}
+                        <tr>
+                            <td><strong>{{ emp['emp_id'] }}</strong></td>
+                            <td class="emp-name">{{ emp['name'] }}</td>
+                            <td>{{ emp['email'] or 'N/A' }}</td>
+                            <td>{{ emp['phone'] or 'N/A' }}</td>
+                            <td>{{ emp['department'] }}</td>
+                            <td>{{ emp['designation'] or 'N/A' }}</td>
+                            <td><strong style="color:#059669;">₹{{ emp['basic_salary'] or 0 }}</strong></td>
+                            <td>
+                                <span class="badge status-{{ emp['status'] }}">
+                                    {% if emp['status'] == 'active' %}<i class="fas fa-check-circle"></i>{% else %}<i class="fas fa-times-circle"></i>{% endif %}
+                                    {{ emp['status']|upper }}
+                                </span>
+                            </td>
+                            <td><span class="badge {% if emp['role'] == 'admin' %}role-admin{% else %}role-employee{% endif %}">{{ emp['role']|upper }}</span></td>
+                            <td>
+                                <button class="action-btn btn-edit" onclick='editEmployee({{ emp["emp_id"] | tojson }}, {{ emp["name"] | tojson }}, {{ (emp["email"] or "") | tojson }}, {{ (emp["phone"] or "") | tojson }}, {{ emp["department"] | tojson }}, {{ emp["basic_salary"] or 0 }}, {{ (emp["designation"] or "") | tojson }})'>
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                {% if emp['role'] != 'admin' %}
+                                <a href="{{ url_for('toggle_status', emp_id=emp['emp_id']) }}" class="action-btn {% if emp['status'] == 'active' %}btn-inactive{% else %}btn-active{% endif %}" onclick="return confirm('Toggle status?')">
+                                    <i class="fas fa-{% if emp['status'] == 'active' %}user-slash{% else %}user-check{% endif %}"></i>
+                                </a>
+                                <a href="{{ url_for('delete_employee', emp_id=emp['emp_id']) }}" class="action-btn btn-delete" onclick="return confirm('Delete?')">
+                                    <i class="fas fa-trash"></i>
+                                </a>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </section>
+            {% endif %}
+
+            {% if tab == 'leaves' %}
+            <section class="dashboard-hero">
+                <div style="display:flex;align-items:center;gap:20px;">
+                    <div class="hero-icon"><i class="fas fa-umbrella-beach"></i></div>
+                    <div><h2>Leave <span>Management</span></h2></div>
+                </div>
+                <div class="today-chip"><small>PENDING</small><strong>{{ pending_leaves }}</strong></div>
+            </section>
+            <section class="content-card">
+                <div class="card-title-row">
+                    <h3 class="card-title"><i class="fas fa-envelope-open-text" style="color:var(--primary);"></i> Leave Requests</h3>
+                    <span class="mini-label">{{ leave_requests|length }} Total</span>
+                </div>
+                <table>
+                    <thead>
+                        <tr><th>Emp ID</th><th>Name</th><th>Type</th><th>From</th><th>To</th><th>Days</th><th>Reason</th><th>Status</th><th>Action</th></tr>
+                    </thead>
+                    <tbody>
+                        {% for l in leave_requests %}
+                        <tr>
+                            <td><strong>{{ l['emp_id'] }}</strong></td>
+                            <td class="emp-name">{{ l['name'] }}</td>
+                            <td><span class="badge leave-type">{{ l['leave_type'] or 'Casual' }}</span></td>
+                            <td>{{ l['from_date'] or 'N/A' }}</td>
+                            <td>{{ l['to_date'] or 'N/A' }}</td>
+                            <td><strong>{{ l['total_days'] or 1 }}</strong></td>
+                            <td style="max-width:150px;">{{ l['reason'] }}</td>
+                            <td><span class="badge status-{{ l['status'] }}">{{ l['status']|upper }}</span></td>
+                            <td>
+                                {% if l['status'] == 'pending' %}
+                                <a href="{{ url_for('handle_leave', leave_id=l['id'], action='approved') }}" class="action-btn btn-approve" onclick="return confirm('Approve?')"><i class="fas fa-check"></i></a>
+                                <a href="{{ url_for('handle_leave', leave_id=l['id'], action='rejected') }}" class="action-btn btn-reject" onclick="return confirm('Reject?')"><i class="fas fa-times"></i></a>
+                                {% else %}<span class="muted-text">Done</span>{% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        {% if not leave_requests %}
+                        <tr><td colspan="9"><div class="empty-box"><i class="fas fa-inbox" style="font-size:30px;"></i><br>No requests</div></td></tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </section>
+            {% endif %}
+
+            {% if tab == 'short_leaves' %}
+            <section class="dashboard-hero">
+                <div style="display:flex;align-items:center;gap:20px;">
+                    <div class="hero-icon"><i class="fas fa-hourglass-half"></i></div>
+                    <div><h2>Short Leave <span>Management</span></h2></div>
+                </div>
+                <div class="today-chip"><small>PENDING</small><strong>{{ pending_short }}</strong></div>
+            </section>
+            <section class="content-card">
+                <table>
+                    <thead>
+                        <tr><th>Emp ID</th><th>Name</th><th>Date</th><th>Start</th><th>End</th><th>Hours</th><th>Reason</th><th>Status</th><th>Action</th></tr>
+                    </thead>
+                    <tbody>
+                        {% for s in short_leaves %}
+                        <tr>
+                            <td><strong>{{ s['emp_id'] }}</strong></td>
+                            <td class="emp-name">{{ s['name'] }}</td>
+                            <td>{{ s['date'] }}</td>
+                            <td>{{ s['start_time'] }}</td>
+                            <td>{{ s['end_time'] }}</td>
+                            <td><strong>{{ s['duration_hours'] }}h</strong></td>
+                            <td style="max-width:150px;">{{ s['reason'] }}</td>
+                            <td><span class="badge status-{{ s['status'] }}">{{ s['status']|upper }}</span></td>
+                            <td>
+                                {% if s['status'] == 'pending' %}
+                                <a href="{{ url_for('handle_short_leave', sl_id=s['id'], action='approved') }}" class="action-btn btn-approve" onclick="return confirm('Approve?')"><i class="fas fa-check"></i></a>
+                                <a href="{{ url_for('handle_short_leave', sl_id=s['id'], action='rejected') }}" class="action-btn btn-reject" onclick="return confirm('Reject?')"><i class="fas fa-times"></i></a>
+                                {% else %}<span class="muted-text">Done</span>{% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        {% if not short_leaves %}
+                        <tr><td colspan="9"><div class="empty-box"><i class="fas fa-hourglass-half" style="font-size:30px;"></i><br>No short leaves</div></td></tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </section>
+            {% endif %}
+
+            {% if tab == 'complaints' %}
+            <section class="dashboard-hero">
+                <div style="display:flex;align-items:center;gap:20px;">
+                    <div class="hero-icon"><i class="fas fa-comment-alt"></i></div>
+                    <div><h2>Complaint <span>Management</span></h2></div>
+                </div>
+                <div class="today-chip"><small>OPEN</small><strong>{{ open_complaints }}</strong></div>
+            </section>
+            <section class="content-card">
+                {% for c in complaints %}
+                <div class="complaint-card">
+                    <div class="complaint-header">
+                        <div>
+                            <strong>{{ c['subject'] }}</strong>
+                            <span class="badge priority-{{ c['priority']|lower }}">{{ c['priority'] }}</span>
+                            <span class="badge status-{{ c['status'] }}">{{ c['status']|upper }}</span>
+                        </div>
+                        <div class="muted-text">
+                            <i class="fas fa-user"></i> {{ c['name'] }} | {{ c['created_at'] }}
+                        </div>
+                    </div>
+                    <div class="complaint-body">{{ c['description'] }}</div>
+                    {% if c['admin_reply'] %}
+                    <div class="complaint-reply">
+                        <strong><i class="fas fa-reply"></i> Admin Reply:</strong>
+                        <p style="margin-top:5px;font-size:13px;">{{ c['admin_reply'] }}</p>
+                        <small class="muted-text">Replied on: {{ c['replied_on'] }}</small>
+                    </div>
+                    {% else %}
+                    <button class="action-btn btn-reply" onclick='replyComplaint({{ c["id"] }}, {{ c["subject"] | tojson }})'>
+                        <i class="fas fa-reply"></i> Reply
+                    </button>
+                    {% endif %}
+                </div>
+                {% endfor %}
+                {% if not complaints %}
+                <div class="empty-box"><i class="fas fa-comment-slash" style="font-size:30px;"></i><br>No complaints</div>
+                {% endif %}
+            </section>
+            {% endif %}
+
+            {% if tab == 'resignations' %}
+            <section class="dashboard-hero">
+                <div style="display:flex;align-items:center;gap:20px;">
+                    <div class="hero-icon"><i class="fas fa-door-open"></i></div>
+                    <div><h2>Resignation <span>Management</span></h2></div>
+                </div>
+                <div class="today-chip"><small>PENDING</small><strong>{{ pending_resignations }}</strong></div>
+            </section>
+            <section class="content-card">
+                <table>
+                    <thead>
+                        <tr><th>Emp ID</th><th>Name</th><th>Dept</th><th>Resign Date</th><th>Last Working</th><th>Reason</th><th>Status</th><th>Action</th></tr>
+                    </thead>
+                    <tbody>
+                        {% for r in resignations %}
+                        <tr>
+                            <td><strong>{{ r['emp_id'] }}</strong></td>
+                            <td class="emp-name">{{ r['name'] }}</td>
+                            <td>{{ r['department'] }}</td>
+                            <td>{{ r['resignation_date'] }}</td>
+                            <td>{{ r['last_working_date'] }}</td>
+                            <td style="max-width:150px;">{{ r['reason'] }}</td>
+                            <td><span class="badge status-{{ r['status'] }}">{{ r['status']|upper }}</span></td>
+                            <td>
+                                {% if r['status'] == 'pending' %}
+                                <button class="action-btn btn-approve" onclick='handleResignation({{ r["id"] }}, "accepted")'><i class="fas fa-check"></i></button>
+                                <button class="action-btn btn-reject" onclick='handleResignation({{ r["id"] }}, "rejected")'><i class="fas fa-times"></i></button>
+                                {% else %}<span class="muted-text">Done</span>{% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        {% if not resignations %}
+                        <tr><td colspan="8"><div class="empty-box"><i class="fas fa-door-closed" style="font-size:30px;"></i><br>No resignations</div></td></tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </section>
+            {% endif %}
+
+            {% if tab == 'salary' %}
+            <section class="dashboard-hero">
+                <div style="display:flex;align-items:center;gap:20px;">
+                    <div class="hero-icon"><i class="fas fa-money-bill-wave"></i></div>
+                    <div><h2>Salary <span>Management</span></h2></div>
+                </div>
+                <div class="today-chip"><small>MONTH</small><strong>{{ salary_month }}</strong></div>
+            </section>
+            <section class="content-card">
+                <form method="GET" action="{{ url_for('admin_dashboard', tab='salary') }}" class="filter-box">
+                    <div class="filter-group">
+                        <label>Month</label>
+                        <input type="month" name="salary_month" value="{{ salary_month }}">
+                    </div>
+                    <div class="filter-group">
+                        <label>Search Employee</label>
+                        <select name="salary_emp">
+                            <option value="">All Employees</option>
+                            {% for emp in employees %}
+                            {% if emp['role'] != 'admin' %}
+                            <option value="{{ emp['emp_id'] }}" {% if salary_emp_filter == emp['emp_id'] %}selected{% endif %}>{{ emp['emp_id'] }} - {{ emp['name'] }}</option>
+                            {% endif %}
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <button type="submit" class="filter-btn"><i class="fas fa-search"></i> Calculate</button>
+                    <a href="{{ url_for('download_report', report_type='salary', month=salary_month, emp_filter=salary_emp_filter) }}" class="action-btn btn-download" style="padding:10px 17px;">
+                        <i class="fas fa-file-excel"></i> Download Excel
+                    </a>
+                </form>
+                {% for sal in salary_list %}
+                <div class="salary-card">
+                    <div class="salary-header">
+                        <div>
+                            <h3 style="font-size:18px;"><i class="fas fa-user-circle" style="color:var(--primary);"></i> {{ sal['name'] }} ({{ sal['emp_id'] }})</h3>
+                            <p style="color:var(--text-secondary);font-size:12px;">{{ sal['department'] }} | {{ sal['designation'] }}</p>
+                        </div>
+                        <div style="text-align:right;">
+                            <p style="font-size:11px;color:var(--text-secondary);">NET SALARY</p>
+                            <h2 style="color:#059669;font-size:24px;">₹{{ sal['net_salary'] }}</h2>
+                        </div>
+                    </div>
+                    <div class="salary-details">
+                        <div class="salary-item"><label>Basic</label><strong>₹{{ sal['basic_salary'] }}</strong></div>
+                        <div class="salary-item"><label>Working Days</label><strong>{{ sal['working_days'] }}</strong></div>
+                        <div class="salary-item"><label>Present</label><strong style="color:#059669;">{{ sal['present_days'] }}</strong></div>
+                        <div class="salary-item"><label>Late Days</label><strong style="color:#d97706;">{{ sal['late_days'] }}</strong></div>
+                        <div class="salary-item"><label>Dots</label><strong style="color:#dc2626;">{{ sal['late_dots'] }}</strong></div>
+                        <div class="salary-item"><label>Half Days</label><strong style="color:#7c3aed;">{{ sal['half_days'] }}</strong></div>
+                        <div class="salary-item"><label>Leaves</label><strong style="color:#2563eb;">{{ sal['leave_days'] }}</strong></div>
+                        <div class="salary-item"><label>Absent</label><strong style="color:#dc2626;">{{ sal['absent_days'] }}</strong></div>
+                        <div class="salary-item"><label>Overtime</label><strong>₹{{ sal['overtime_amount'] }}</strong></div>
+                        <div class="salary-item"><label>Deductions</label><strong style="color:#dc2626;">-₹{{ sal['total_deductions'] }}</strong></div>
+                        <div class="salary-item salary-total"><label>Gross</label><strong>₹{{ sal['gross_salary'] }}</strong></div>
+                        <div class="salary-item salary-total"><label>NET</label><strong>₹{{ sal['net_salary'] }}</strong></div>
+                    </div>
+                </div>
+                {% endfor %}
+                {% if not salary_list %}
+                <div class="empty-box"><i class="fas fa-money-bill" style="font-size:40px;"></i><br>No employees</div>
+                {% endif %}
+            </section>
+            {% endif %}
+
+            {% if tab == 'holidays' %}
+            <section class="dashboard-hero">
+                <div style="display:flex;align-items:center;gap:20px;">
+                    <div class="hero-icon"><i class="fas fa-calendar-star"></i></div>
+                    <div><h2>Holiday <span>Calendar</span></h2></div>
+                </div>
+                <div class="today-chip"><small>HOLIDAYS</small><strong>{{ holidays|length }}</strong></div>
+            </section>
+            <section class="content-card">
+                <h3 class="card-title" style="margin-bottom:15px;"><i class="fas fa-file-excel" style="color:#059669;"></i> Bulk Upload Holidays</h3>
+                <p class="form-hint" style="margin-bottom:15px;">Excel format: Column A=Date, B=Name, C=Type</p>
+                <form method="POST" action="{{ url_for('upload_holidays') }}" enctype="multipart/form-data" class="filter-box">
+                    <div class="filter-group">
+                        <label>Upload Excel File</label>
+                        <input type="file" name="holiday_file" accept=".xlsx,.xls" required>
+                    </div>
+                    <button type="submit" class="filter-btn"><i class="fas fa-upload"></i> Upload</button>
+                    <a href="{{ url_for('download_holiday_template') }}" class="action-btn btn-download" style="padding:10px 17px;">
+                        <i class="fas fa-download"></i> Template
+                    </a>
+                </form>
+            </section>
+            <section class="content-card">
+                <h3 class="card-title" style="margin-bottom:15px;"><i class="fas fa-plus-circle" style="color:var(--primary);"></i> Add Single Holiday</h3>
+                <form method="POST" action="{{ url_for('add_holiday') }}" class="filter-box">
+                    <div class="filter-group"><label>Date</label><input type="date" name="holiday_date" required></div>
+                    <div class="filter-group"><label>Holiday Name</label><input type="text" name="holiday_name" required></div>
+                    <div class="filter-group">
+                        <label>Type</label>
+                        <select name="holiday_type">
+                            <option value="National">National</option>
+                            <option value="Company">Company</option>
+                            <option value="Festival">Festival</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="filter-btn"><i class="fas fa-plus"></i> Add</button>
+                </form>
+            </section>
+            <section class="content-card">
+                <div class="card-title-row">
+                    <h3 class="card-title"><i class="fas fa-calendar-alt" style="color:var(--primary);"></i> All Holidays</h3>
+                </div>
+                <table>
+                    <thead><tr><th>Date</th><th>Name</th><th>Type</th><th>Action</th></tr></thead>
+                    <tbody>
+                        {% for h in holidays %}
+                        <tr>
+                            <td><strong>{{ h['date'] }}</strong></td>
+                            <td class="emp-name"><i class="fas fa-star" style="color:#f59e0b;"></i> {{ h['name'] }}</td>
+                            <td><span class="badge role-employee">{{ h['type'] }}</span></td>
+                            <td>
+                                <a href="{{ url_for('delete_holiday', holiday_id=h['id']) }}" class="action-btn btn-delete" onclick="return confirm('Delete?')">
+                                    <i class="fas fa-trash"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </section>
+            {% endif %}
+
+            {% if tab == 'monthly' %}
+            <section class="dashboard-hero">
+                <div style="display:flex;align-items:center;gap:20px;">
+                    <div class="hero-icon"><i class="fas fa-calendar-alt"></i></div>
+                    <div><h2>Monthly <span>Report</span></h2></div>
+                </div>
+                <div class="today-chip"><small>MONTH</small><strong>{{ selected_month }}</strong></div>
+            </section>
+            <section class="content-card">
+                <form method="GET" action="{{ url_for('admin_dashboard', tab='monthly') }}" class="filter-box">
+                    <div class="filter-group"><label>Month</label><input type="month" name="month" value="{{ selected_month }}"></div>
+                    <button type="submit" class="filter-btn"><i class="fas fa-search"></i> View</button>
+                </form>
+                <table>
+                    <thead><tr><th>Date</th><th>Emp ID</th><th>Name</th><th>Dept</th><th>In</th><th>Out</th><th>Hours</th><th>Status</th></tr></thead>
+                    <tbody>
+                        {% for r in monthly_data %}
+                        <tr>
+                            <td><strong>{{ r['date'] }}</strong></td>
+                            <td>{{ r['emp_id'] }}</td>
+                            <td class="emp-name">{{ r['name'] }}</td>
+                            <td>{{ r['department'] }}</td>
+                            <td>{{ r['punch_in'] or 'N/A' }}</td>
+                            <td>{{ r['punch_out'] or 'N/A' }}</td>
+                            <td>{{ r['total_hours'] or 'N/A' }}</td>
+                            <td><span class="badge status-{{ r['status'] }}">{{ r['status']|upper|replace('_', ' ') }}</span></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </section>
+            {% endif %}
+
+            {% if tab == 'reports' %}
+            <section class="dashboard-hero">
+                <div style="display:flex;align-items:center;gap:20px;">
+                    <div class="hero-icon"><i class="fas fa-file-excel"></i></div>
+                    <div><h2>Reports <span>Center</span></h2><p>Download reports in Excel</p></div>
+                </div>
+            </section>
+            <div class="reports-grid">
+                <div class="report-card">
+                    <div class="report-icon" style="background: linear-gradient(135deg, #4f46e5, #7c3aed);">
+                        <i class="fas fa-clipboard-check"></i>
+                    </div>
+                    <h4>Attendance Report</h4>
+                    <p>With filters</p>
+                    <button class="action-btn btn-download" onclick='showReportModal("attendance")' style="padding:10px 20px;font-size:13px;">
+                        <i class="fas fa-download"></i> Download
+                    </button>
+                </div>
+                <div class="report-card">
+                    <div class="report-icon" style="background: linear-gradient(135deg, #059669, #10b981);">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <h4>Employee Master</h4>
+                    <p>All employee details</p>
+                    <a href="{{ url_for('download_report', report_type='employee_master') }}" class="action-btn btn-download" style="padding:10px 20px;font-size:13px;">
+                        <i class="fas fa-download"></i> Download
+                    </a>
+                </div>
+                <div class="report-card">
+                    <div class="report-icon" style="background: linear-gradient(135deg, #d97706, #f59e0b);">
+                        <i class="fas fa-user-check"></i>
+                    </div>
+                    <h4>Active/Inactive</h4>
+                    <p>Status report</p>
+                    <a href="{{ url_for('download_report', report_type='active_inactive') }}" class="action-btn btn-download" style="padding:10px 20px;font-size:13px;">
+                        <i class="fas fa-download"></i> Download
+                    </a>
+                </div>
+                <div class="report-card">
+                    <div class="report-icon" style="background: linear-gradient(135deg, #dc2626, #f97316);">
+                        <i class="fas fa-money-bill-wave"></i>
+                    </div>
+                    <h4>Salary Report</h4>
+                    <p>Monthly salary</p>
+                    <button class="action-btn btn-download" onclick='showReportModal("salary")' style="padding:10px 20px;font-size:13px;">
+                        <i class="fas fa-download"></i> Download
+                    </button>
+                </div>
+                <div class="report-card">
+                    <div class="report-icon" style="background: linear-gradient(135deg, #7c3aed, #a855f7);">
+                        <i class="fas fa-calendar-alt"></i>
+                    </div>
+                    <h4>Monthly Report</h4>
+                    <p>Month-wise data</p>
+                    <button class="action-btn btn-download" onclick='showReportModal("monthly")' style="padding:10px 20px;font-size:13px;">
+                        <i class="fas fa-download"></i> Download
+                    </button>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if tab == 'settings' %}
+            <section class="dashboard-hero">
+                <div style="display:flex;align-items:center;gap:20px;">
+                    <div class="hero-icon"><i class="fas fa-cog"></i></div>
+                    <div><h2>System <span>Settings</span></h2></div>
+                </div>
+            </section>
+            <section class="content-card">
+                <div class="settings-wrap">
+                    <form method="POST" action="{{ url_for('save_settings') }}">
+                        <h3 class="card-title"><i class="fas fa-building"></i> Company Settings</h3>
+                        <div class="settings-grid">
+                            <div class="form-group">
+                                <label><i class="fas fa-industry"></i> Company Name</label>
+                                <input type="text" name="company_name" value="{{ settings['company_name'] if settings else 'Osho Industries Limited' }}" placeholder="Osho Industries Limited">
+                                <p class="form-hint">Ye naam sabhi jagah dikhega</p>
+                            </div>
+                            <div class="form-group">
+                                <label>Default Theme</label>
+                                <select name="default_theme">
+                                    <option value="red" {% if settings and settings['default_theme'] == 'red' %}selected{% endif %}>Red</option>
+                                    <option value="blue" {% if settings and settings['default_theme'] == 'blue' %}selected{% endif %}>Blue</option>
+                                    <option value="green" {% if settings and settings['default_theme'] == 'green' %}selected{% endif %}>Green</option>
+                                    <option value="purple" {% if settings and settings['default_theme'] == 'purple' %}selected{% endif %}>Purple</option>
+                                    <option value="orange" {% if settings and settings['default_theme'] == 'orange' %}selected{% endif %}>Orange</option>
+                                </select>
+                            </div>
+                            <div class="form-group"><label>Office Time In</label><input type="time" name="office_time_in" value="{{ settings['office_time_in'] if settings else '10:30' }}"></div>
+                            <div class="form-group"><label>Office Time Out</label><input type="time" name="office_time_out" value="{{ settings['office_time_out'] if settings else '18:30' }}"></div>
+                        </div>
+
+                        <h4 class="settings-section-title"><i class="fas fa-clipboard-list"></i> Office Rules</h4>
+                        <div class="settings-grid">
+                            <div class="form-group"><label>Grace Period (Min)</label><input type="number" name="grace_period_min" value="{{ settings['grace_period_min'] if settings else 10 }}"></div>
+                            <div class="form-group"><label>Half Day After</label><input type="time" name="half_day_after" value="{{ settings['half_day_after'] if settings else '11:00' }}"></div>
+                            <div class="form-group"><label>Dots Per Leave</label><input type="number" name="dots_per_leave" value="{{ settings['dots_per_leave'] if settings else 4 }}"></div>
+                            <div class="form-group"><label>Short Leave/Month</label><input type="number" name="short_leave_per_month" value="{{ settings['short_leave_per_month'] if settings else 1 }}"></div>
+                            <div class="form-group"><label>Short Leave Hours</label><input type="number" name="short_leave_hours" value="{{ settings['short_leave_hours'] if settings else 1 }}" step="0.5"></div>
+                        </div>
+
+                        <h4 class="settings-section-title"><i class="fas fa-money-bill"></i> Salary Settings</h4>
+                        <div class="settings-grid">
+                            <div class="form-group"><label>Late Deduction (₹)</label><input type="number" name="late_deduction" value="{{ settings['late_deduction'] if settings else 50 }}" step="0.01"></div>
+                            <div class="form-group"><label>Overtime Rate (₹/hr)</label><input type="number" name="overtime_rate" value="{{ settings['overtime_rate'] if settings else 100 }}" step="0.01"></div>
+                        </div>
+
+                        <h4 class="settings-section-title"><i class="fas fa-envelope"></i> Email Settings</h4>
+                        <div class="form-group"><label>SMTP Email</label><input type="email" name="smtp_email" value="{{ settings['smtp_email'] if settings else '' }}"></div>
+                        <div class="form-group"><label>App Password</label><input type="password" name="smtp_password" value="{{ settings['smtp_password'] if settings else '' }}"></div>
+                        <div class="settings-grid">
+                            <div class="form-group"><label>SMTP Server</label><input type="text" name="smtp_server" value="{{ settings['smtp_server'] if settings else 'smtp.gmail.com' }}"></div>
+                            <div class="form-group"><label>SMTP Port</label><input type="number" name="smtp_port" value="{{ settings['smtp_port'] if settings else 587 }}"></div>
+                        </div>
+
+                        <button type="submit" class="save-btn" style="margin-top:20px;"><i class="fas fa-save"></i> Save Settings</button>
+                    </form>
+                </div>
+            </section>
+            {% endif %}
+        </main>
+    </div>
+
+    <!-- MODALS -->
+    <div class="modal-overlay" id="editEmployeeModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3><i class="fas fa-user-edit"></i> Edit Employee</h3>
+                <button class="close-btn" onclick="closeModal('editEmployeeModal')"><i class="fas fa-times"></i></button>
+            </div>
+            <form id="editEmployeeForm" method="POST">
+                <div class="form-group"><label>Current ID</label><input type="text" id="edit_current_id" disabled></div>
+                <div class="form-group"><label>New Employee ID</label><input type="text" name="new_emp_id" id="edit_new_emp_id"></div>
+                <div class="form-group"><label>Name</label><input type="text" name="name" id="edit_name" required></div>
+                <div class="form-group"><label>Email</label><input type="email" name="email" id="edit_email"></div>
+                <div class="form-group"><label>Phone</label><input type="tel" name="phone" id="edit_phone"></div>
+                <div class="form-group">
+                    <label>Department</label>
+                    <select name="department" id="edit_department">
+                        <option value="IT">IT</option><option value="HR">HR</option><option value="Finance">Finance</option>
+                        <option value="Marketing">Marketing</option><option value="Operations">Operations</option>
+                        <option value="Sales">Sales</option><option value="Management">Management</option>
+                    </select>
+                </div>
+                <div class="form-group"><label>Designation</label><input type="text" name="designation" id="edit_designation"></div>
+                <div class="form-group"><label>Basic Salary (₹)</label><input type="number" name="basic_salary" id="edit_salary" step="0.01"></div>
+                <div class="form-group"><label>New Password (blank to keep)</label><input type="text" name="password" id="edit_password"></div>
+                <div class="modal-actions">
+                    <button type="submit" class="modal-save"><i class="fas fa-save"></i> Save</button>
+                    <button type="button" class="modal-cancel" onclick="closeModal('editEmployeeModal')">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="editAttendanceModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3><i class="fas fa-clock"></i> Edit Attendance</h3>
+                <button class="close-btn" onclick="closeModal('editAttendanceModal')"><i class="fas fa-times"></i></button>
+            </div>
+            <form id="editAttendanceForm" method="POST">
+                <div class="form-group"><label>Punch In</label><input type="text" name="punch_in" id="att_punch_in" placeholder="09:00:00"></div>
+                <div class="form-group"><label>Punch Out</label><input type="text" name="punch_out" id="att_punch_out" placeholder="18:00:00"></div>
+                <div class="form-group">
+                    <label>Status</label>
+                    <select name="status" id="att_status">
+                        <option value="present">Present</option>
+                        <option value="late">Late</option>
+                        <option value="half_day">Half Day</option>
+                        <option value="absent">Absent</option>
+                        <option value="leave">Leave</option>
+                    </select>
+                </div>
+                <div class="modal-actions">
+                    <button type="submit" class="modal-save">Update</button>
+                    <button type="button" class="modal-cancel" onclick="closeModal('editAttendanceModal')">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="replyComplaintModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3><i class="fas fa-reply"></i> Reply to Complaint</h3>
+                <button class="close-btn" onclick="closeModal('replyComplaintModal')"><i class="fas fa-times"></i></button>
+            </div>
+            <form id="replyComplaintForm" method="POST">
+                <div class="form-group"><label>Subject</label><input type="text" id="comp_subject" disabled></div>
+                <div class="form-group">
+                    <label>Your Reply</label>
+                    <textarea name="admin_reply" rows="5" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Status</label>
+                    <select name="status">
+                        <option value="resolved">Resolved</option>
+                        <option value="in_progress">In Progress</option>
+                    </select>
+                </div>
+                <div class="modal-actions">
+                    <button type="submit" class="modal-save">Send Reply</button>
+                    <button type="button" class="modal-cancel" onclick="closeModal('replyComplaintModal')">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="resignationModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3><i class="fas fa-door-open"></i> Handle Resignation</h3>
+                <button class="close-btn" onclick="closeModal('resignationModal')"><i class="fas fa-times"></i></button>
+            </div>
+            <form id="resignationForm" method="POST">
+                <div class="form-group">
+                    <label>Admin Remarks</label>
+                    <textarea name="admin_remarks" rows="4" required></textarea>
+                </div>
+                <div class="modal-actions">
+                    <button type="submit" class="modal-save"><i class="fas fa-check"></i> Confirm</button>
+                    <button type="button" class="modal-cancel" onclick="closeModal('resignationModal')">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="reportModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3><i class="fas fa-file-excel"></i> Download Report</h3>
+                <button class="close-btn" onclick="closeModal('reportModal')"><i class="fas fa-times"></i></button>
+            </div>
+            <form id="reportForm" method="GET">
+                <div class="form-group" id="dateRangeFields">
+                    <label>From Date</label><input type="date" name="from_date">
+                </div>
+                <div class="form-group" id="toDateField">
+                    <label>To Date</label><input type="date" name="to_date">
+                </div>
+                <div class="form-group" id="monthField" style="display:none;">
+                    <label>Month</label><input type="month" name="month" value="{{ salary_month }}">
+                </div>
+                <div class="form-group">
+                    <label>Employee (Optional)</label>
+                    <select name="emp_filter">
+                        <option value="">All Employees</option>
+                        {% for emp in employees %}
+                        {% if emp['role'] != 'admin' %}
+                        <option value="{{ emp['emp_id'] }}">{{ emp['emp_id'] }} - {{ emp['name'] }}</option>
+                        {% endif %}
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group" id="statusField">
+                    <label>Status (Optional)</label>
+                    <select name="status_filter">
+                        <option value="">All</option>
+                        <option value="present">Present</option>
+                        <option value="late">Late</option>
+                        <option value="half_day">Half Day</option>
+                        <option value="leave">Leave</option>
+                        <option value="absent">Absent</option>
+                    </select>
+                </div>
+                <div class="modal-actions">
+                    <button type="submit" class="modal-save"><i class="fas fa-download"></i> Download</button>
+                    <button type="button" class="modal-cancel" onclick="closeModal('reportModal')">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const mainWrapper = document.getElementById('mainWrapper');
+            sidebar.classList.toggle('hidden');
+            mainWrapper.classList.toggle('full');
+            localStorage.setItem('sidebarHidden', sidebar.classList.contains('hidden'));
+        }
+
+        function toggleNotifications() {
+            document.getElementById('notificationDropdown').classList.toggle('active');
+        }
+
+        document.addEventListener('click', function(e) {
+            const dropdown = document.getElementById('notificationDropdown');
+            const bell = document.querySelector('.notification-bell');
+            if (dropdown && bell && !bell.contains(e.target) && !dropdown.contains(e.target)) {
+                dropdown.classList.remove('active');
+            }
+        });
+
+        function setTheme(theme) {
+            document.documentElement.setAttribute('data-theme', theme);
+            localStorage.setItem('admin_theme', theme);
+        }
+        function toggleMode() {
+            const mode = document.documentElement.getAttribute('data-mode') || 'light';
+            const newMode = mode === 'light' ? 'dark' : 'light';
+            document.documentElement.setAttribute('data-mode', newMode);
+            localStorage.setItem('mode', newMode);
+            document.getElementById('modeIcon').className = newMode === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+        }
+        window.addEventListener('DOMContentLoaded', () => {
+            const theme = localStorage.getItem('admin_theme') || '{{ settings["default_theme"] if settings else "red" }}';
+            const mode = localStorage.getItem('mode') || 'light';
+            document.documentElement.setAttribute('data-theme', theme);
+            document.documentElement.setAttribute('data-mode', mode);
+            const icon = document.getElementById('modeIcon');
+            if (icon) icon.className = mode === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+
+            const sidebarHidden = localStorage.getItem('sidebarHidden') === 'true';
+            if (sidebarHidden) {
+                document.getElementById('sidebar').classList.add('hidden');
+                document.getElementById('mainWrapper').classList.add('full');
+            }
+        });
+
+        function editEmployee(empId, name, email, phone, dept, salary, designation) {
+            document.getElementById("edit_current_id").value = empId;
+            document.getElementById("edit_new_emp_id").value = empId;
+            document.getElementById("edit_name").value = name;
+            document.getElementById("edit_email").value = email;
+            document.getElementById("edit_phone").value = phone;
+            document.getElementById("edit_department").value = dept;
+            document.getElementById("edit_designation").value = designation;
+            document.getElementById("edit_salary").value = salary || 0;
+            document.getElementById("edit_password").value = "";
+            document.getElementById("editEmployeeForm").action = "/admin/edit_employee/" + encodeURIComponent(empId);
+            document.getElementById("editEmployeeModal").classList.add("active");
+        }
+
+        function editAttendance(id, pin, pout, status) {
+            document.getElementById("att_punch_in").value = pin;
+            document.getElementById("att_punch_out").value = pout;
+            document.getElementById("att_status").value = status;
+            document.getElementById("editAttendanceForm").action = "/admin/edit_attendance/" + id;
+            document.getElementById("editAttendanceModal").classList.add("active");
+        }
+
+        function replyComplaint(id, subject) {
+            document.getElementById("comp_subject").value = subject;
+            document.getElementById("replyComplaintForm").action = "/admin/reply_complaint/" + id;
+            document.getElementById("replyComplaintModal").classList.add("active");
+        }
+
+        function handleResignation(id, action) {
+            document.getElementById("resignationForm").action = "/admin/handle_resignation/" + id + "/" + action;
+            document.getElementById("resignationModal").classList.add("active");
+        }
+
+        function showReportModal(type) {
+            const form = document.getElementById("reportForm");
+            form.action = "/admin/download_report/" + type;
+            const dateFields = document.getElementById("dateRangeFields");
+            const toField = document.getElementById("toDateField");
+            const monthField = document.getElementById("monthField");
+            const statusField = document.getElementById("statusField");
+
+            if (type === 'salary' || type === 'monthly') {
+                dateFields.style.display = 'none';
+                toField.style.display = 'none';
+                monthField.style.display = 'block';
+                statusField.style.display = type === 'monthly' ? 'block' : 'none';
+            } else {
+                dateFields.style.display = 'block';
+                toField.style.display = 'block';
+                monthField.style.display = 'none';
+                statusField.style.display = 'block';
+            }
+            document.getElementById("reportModal").classList.add("active");
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).classList.remove("active");
+        }
+
+        document.addEventListener("keydown", (e) => {
+            if (e.key === "Escape") document.querySelectorAll(".modal-overlay").forEach(m => m.classList.remove("active"));
+        });
+
+        {% if tab == 'analytics' %}
+        new Chart(document.getElementById('weeklyChart'), {
+            type: 'bar',
+            data: {
+                labels: {{ chart_dates | tojson }},
+                datasets: [
+                    { label: 'Present', data: {{ chart_present | tojson }}, backgroundColor: '#059669' },
+                    { label: 'Late', data: {{ chart_late | tojson }}, backgroundColor: '#f59e0b' },
+                    { label: 'Absent', data: {{ chart_absent | tojson }}, backgroundColor: '#dc2626' }
+                ]
+            },
+            options: { responsive: true, maintainAspectRatio: false }
+        });
+        new Chart(document.getElementById('todayPieChart'), {
+            type: 'doughnut',
+            data: {
+                labels: ['Present', 'Absent', 'Late'],
+                datasets: [{ data: [{{ present_today }}, {{ absent_today }}, {{ late_today }}], backgroundColor: ['#059669', '#dc2626', '#f59e0b'] }]
+            },
+            options: { responsive: true, maintainAspectRatio: false }
+        });
+        new Chart(document.getElementById('deptChart'), {
+            type: 'pie',
+            data: {
+                labels: {{ dept_labels | tojson }},
+                datasets: [{ data: {{ dept_counts | tojson }}, backgroundColor: ['#4f46e5', '#059669', '#dc2626', '#f59e0b', '#0284c7', '#7c3aed', '#ec4899'] }]
+            },
+            options: { responsive: true, maintainAspectRatio: false }
+        });
+        new Chart(document.getElementById('leaveChart'), {
+            type: 'polarArea',
+            data: {
+                labels: {{ leave_type_labels | tojson }},
+                datasets: [{ data: {{ leave_type_counts | tojson }}, backgroundColor: ['#4f46e5', '#059669', '#dc2626', '#f59e0b', '#0284c7', '#7c3aed'] }]
+            },
+            options: { responsive: true, maintainAspectRatio: false }
+        });
+        {% endif %}
+
+        setTimeout(() => {
+            document.querySelectorAll(".flash").forEach(el => {
+                el.style.transition = "opacity 0.5s";
+                el.style.opacity = "0";
+                setTimeout(() => el.remove(), 500);
+            });
+        }, 4000);
+    </script>
+</body>
+</html>

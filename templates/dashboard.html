@@ -1,0 +1,1191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Employee - Osho Industries Limited</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --primary: #4f46e5;
+            --primary-light: #7c3aed;
+            --bg-main: #f4f6fb;
+            --bg-card: #ffffff;
+            --bg-sidebar: linear-gradient(180deg, #1e293b, #0f172a);
+            --bg-header: linear-gradient(135deg, #4f46e5, #7c3aed, #db2777);
+            --bg-hover: #f0f7ff;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --text-light: #94a3b8;
+            --border-color: #e2e8f0;
+            --shadow: 0 5px 20px rgba(0,0,0,0.08);
+        }
+
+        [data-theme="red"] { --primary: #e11d48; --bg-header: linear-gradient(135deg, #e11d48, #ef4444, #f97316); --bg-hover: #fff1f2; }
+        [data-theme="blue"] { --primary: #2563eb; --bg-header: linear-gradient(135deg, #1e40af, #2563eb, #3b82f6); --bg-hover: #eff6ff; }
+        [data-theme="green"] { --primary: #059669; --bg-header: linear-gradient(135deg, #047857, #059669, #10b981); --bg-hover: #f0fdf4; }
+        [data-theme="purple"] { --primary: #7c3aed; --bg-header: linear-gradient(135deg, #6d28d9, #7c3aed, #a855f7); --bg-hover: #faf5ff; }
+        [data-theme="orange"] { --primary: #ea580c; --bg-header: linear-gradient(135deg, #c2410c, #ea580c, #f97316); --bg-hover: #fff7ed; }
+
+        [data-mode="dark"] {
+            --bg-main: #0f172a; --bg-card: #1e293b; --bg-hover: #334155;
+            --text-primary: #f1f5f9; --text-secondary: #cbd5e1;
+            --border-color: #334155; --shadow: 0 5px 20px rgba(0,0,0,0.3);
+        }
+
+        body {
+            font-family: "Segoe UI", Arial, sans-serif;
+            background: var(--bg-main); color: var(--text-primary);
+            min-height: 100vh; display: flex; transition: all 0.3s;
+        }
+
+        /* SIDEBAR (Profile on top) */
+        .sidebar {
+            width: 260px; background: var(--bg-sidebar); color: white;
+            height: 100vh; position: fixed; left: 0; top: 0;
+            overflow-y: auto; z-index: 1000; transition: transform 0.3s ease;
+        }
+        .sidebar.hidden { transform: translateX(-260px); }
+
+        .sidebar-header {
+            padding: 25px 20px; border-bottom: 1px solid rgba(255,255,255,0.1);
+            text-align: center;
+        }
+        .sidebar-profile-img {
+            width: 80px; height: 80px; border-radius: 50%;
+            margin: 0 auto 15px; border: 3px solid var(--primary);
+            overflow: hidden; background: #fff; display: flex; align-items: center; justify-content: center;
+        }
+        .sidebar-profile-img img { width: 100%; height: 100%; object-fit: cover; }
+        .sidebar-profile-img i { font-size: 40px; color: #cbd5e1; }
+
+        .sidebar-brand h2 { font-size: 16px; font-weight: 800; margin-bottom: 5px; }
+        .sidebar-brand p { font-size: 11px; opacity: 0.7; letter-spacing: 0.5px; }
+
+        .sidebar-menu { padding: 15px 0; }
+        .menu-item {
+            display: flex; align-items: center; gap: 12px;
+            padding: 12px 20px; color: #cbd5e1; text-decoration: none;
+            font-size: 14px; font-weight: 600; border-left: 3px solid transparent; transition: 0.2s;
+        }
+        .menu-item:hover, .menu-item.active {
+            background: rgba(255,255,255,0.05); color: white; border-left-color: var(--primary);
+        }
+        .menu-item i { width: 20px; font-size: 16px; }
+
+        /* MAIN WRAPPER */
+        .main-wrapper { flex: 1; margin-left: 260px; min-height: 100vh; transition: 0.3s; }
+        .main-wrapper.full { margin-left: 0; }
+
+        .top-bar {
+            background: var(--bg-card); padding: 12px 25px;
+            display: flex; justify-content: space-between; align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05); position: sticky; top: 0; z-index: 100;
+        }
+        .sidebar-toggle {
+            background: var(--bg-hover); border: 1px solid var(--border-color);
+            width: 38px; height: 38px; border-radius: 8px; cursor: pointer;
+            color: var(--primary); font-size: 18px;
+        }
+
+        /* LIVE TIMER (DRAGGABLE) */
+        #draggableTimer {
+            position: fixed; bottom: 30px; right: 30px;
+            width: 180px; padding: 15px; border-radius: 15px;
+            background: var(--bg-header); color: white;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            cursor: move; z-index: 9999; text-align: center;
+            transition: opacity 0.3s;
+        }
+        #draggableTimer.hidden { display: none; }
+        .timer-label { font-size: 10px; text-transform: uppercase; font-weight: 800; opacity: 0.8; }
+        .timer-val { font-size: 22px; font-weight: 800; margin: 5px 0; }
+        .timer-close { position: absolute; top: 5px; right: 8px; cursor: pointer; font-size: 12px; }
+
+        /* NOTIFICATIONS */
+        .notif-bell {
+            position: relative; background: var(--bg-hover); border: 1px solid var(--border-color);
+            width: 38px; height: 38px; border-radius: 8px; cursor: pointer;
+            display: flex; align-items: center; justify-content: center; color: var(--primary);
+        }
+        .notif-count {
+            position: absolute; top: -5px; right: -5px; background: #ef4444; color: white;
+            font-size: 10px; font-weight: 800; min-width: 18px; height: 18px;
+            border-radius: 50%; display: flex; align-items: center; justify-content: center;
+        }
+        .notif-dropdown {
+            display: none; position: absolute; top: 50px; right: 0;
+            background: var(--bg-card); border: 1px solid var(--border-color);
+            width: 300px; border-radius: 12px; box-shadow: var(--shadow); z-index: 1000;
+        }
+        .notif-dropdown.active { display: block; }
+        .notif-header { padding: 10px 15px; border-bottom: 1px solid var(--border-color); font-weight: 800; font-size: 13px; }
+        .notif-item { padding: 12px 15px; border-bottom: 1px solid var(--border-color); font-size: 12px; display: flex; gap: 10px; }
+        .notif-item.unread { background: var(--bg-hover); border-left: 3px solid var(--primary); }
+
+        .main-content { padding: 25px; max-width: 1300px; margin: auto; }
+
+        .content-card {
+            background: var(--bg-card); border-radius: 18px; padding: 22px;
+            margin-bottom: 22px; box-shadow: var(--shadow); border: 1px solid var(--border-color);
+        }
+        .section-title { display: flex; align-items: center; gap: 10px; font-size: 18px; font-weight: 800; margin-bottom: 20px; }
+
+        /* PROFILE FORM - LOCKED FIELDS */
+        .locked-field { background: #f1f5f9 !important; cursor: not-allowed; color: #64748b; font-weight: 700; }
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; }
+        .form-group label { display: block; margin-bottom: 6px; font-size: 12px; font-weight: 800; color: var(--text-secondary); }
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%; padding: 10px 12px; border: 2px solid var(--border-color);
+            border-radius: 10px; background: var(--bg-card); color: var(--text-primary);
+        }
+
+        .btn-main {
+            background: var(--bg-header); color: white; border: none; padding: 12px 25px;
+            border-radius: 10px; font-weight: 800; cursor: pointer; transition: 0.2s;
+        }
+        .btn-main:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+                /* PUNCH CARD */
+        .punch-card {
+            background: var(--bg-card); padding: 25px; border-radius: 18px;
+            border: 1px solid var(--border-color); box-shadow: var(--shadow); margin-bottom: 22px;
+        }
+        .camera-box { display: flex; justify-content: center; gap: 20px; flex-wrap: wrap; margin: 20px 0; }
+        #video, #capturedPhoto {
+            width: 320px; height: 240px; object-fit: cover;
+            border-radius: 15px; background: #111;
+        }
+        #video { border: 4px solid var(--primary); }
+        #capturedPhoto { display: none; border: 4px solid #10b981; }
+        #canvas { display: none; }
+
+        .camera-btn {
+            padding: 10px 22px; border: none; border-radius: 8px; margin: 5px;
+            cursor: pointer; font-weight: 700; color: white;
+        }
+        .capture-btn { background: linear-gradient(135deg, #4f46e5, #7c3aed); }
+        .retake-btn { background: #f59e0b; color: #78350f; }
+
+        .location-info {
+            background: var(--bg-hover); padding: 12px; border-radius: 10px;
+            text-align: center; margin: 15px 0; font-size: 13px;
+        }
+
+        .punch-buttons { display: flex; justify-content: center; gap: 15px; flex-wrap: wrap; margin-top: 15px; }
+        .punch-btn {
+            padding: 16px 40px; color: white; border: none;
+            border-radius: 12px; font-size: 16px; font-weight: 800; cursor: pointer;
+            min-width: 180px;
+        }
+        .punch-in-btn { background: linear-gradient(135deg, #059669, #22c55e); }
+        .punch-out-btn { background: linear-gradient(135deg, #dc2626, #f97316); }
+        .punch-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        /* STATUS */
+        .status-card {
+            background: var(--bg-hover); padding: 15px; border-radius: 12px;
+            text-align: center; margin-top: 15px;
+        }
+        .status-pill { display: inline-block; padding: 6px 15px; border-radius: 20px; font-size: 12px; font-weight: 800; }
+        .status-pill.present { background: #d1fae5; color: #047857; }
+        .status-pill.late { background: #fef3c7; color: #b45309; }
+        .status-pill.half_day { background: #fed7aa; color: #7c2d12; }
+
+        /* STATS GRID */
+        .stats-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px; margin-bottom: 22px;
+        }
+        .stat-card {
+            color: white; padding: 20px; border-radius: 15px;
+            position: relative; overflow: hidden;
+        }
+        .stat-card::after {
+            content: ""; position: absolute; width: 100px; height: 100px;
+            border-radius: 50%; background: rgba(255,255,255,0.12);
+            top: -30px; right: -30px;
+        }
+        .stat-icon { font-size: 24px; margin-bottom: 8px; }
+        .stat-number { font-size: 28px; font-weight: 800; }
+        .stat-label { font-size: 12px; opacity: 0.9; margin-top: 3px; }
+        .stat-1 { background: linear-gradient(135deg, #2563eb, #4f46e5); }
+        .stat-2 { background: linear-gradient(135deg, #059669, #22c55e); }
+        .stat-3 { background: linear-gradient(135deg, #dc2626, #f97316); }
+        .stat-4 { background: linear-gradient(135deg, #7c3aed, #a855f7); }
+        .stat-5 { background: linear-gradient(135deg, #0891b2, #06b6d4); }
+        .stat-6 { background: linear-gradient(135deg, #d97706, #f59e0b); }
+
+        /* LEAVE BALANCE */
+        .leave-balance-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 15px;
+        }
+        .leave-balance-card {
+            padding: 18px; border-radius: 12px; text-align: center;
+            border-top: 4px solid; background: var(--bg-hover);
+        }
+        .leave-balance-card.casual { border-color: #6366f1; }
+        .leave-balance-card.sick { border-color: #ef4444; }
+        .leave-balance-card.earned { border-color: #10b981; }
+        .leave-balance-card.emergency { border-color: #f59e0b; }
+        .leave-balance-card i { font-size: 24px; margin-bottom: 8px; }
+        .leave-balance-card.casual i { color: #6366f1; }
+        .leave-balance-card.sick i { color: #ef4444; }
+        .leave-balance-card.earned i { color: #10b981; }
+        .leave-balance-card.emergency i { color: #f59e0b; }
+        .leave-num { font-size: 26px; font-weight: 800; color: var(--text-primary); }
+        .leave-lab { font-size: 11px; color: var(--text-secondary); margin-top: 5px; }
+
+        /* RULES CARD */
+        .rules-card {
+            background: linear-gradient(135deg, #1e40af, #4f46e5, #7c3aed);
+            color: white; padding: 20px; border-radius: 15px; margin-bottom: 22px;
+        }
+        .rules-card h3 { font-size: 17px; margin-bottom: 15px; }
+        .rules-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+        .rule-item {
+            background: rgba(255,255,255,0.15); padding: 12px; border-radius: 10px;
+            display: flex; align-items: center; gap: 10px;
+        }
+        .rule-item i { font-size: 20px; }
+
+        /* TABLES */
+        table {
+            width: 100%; min-width: 600px;
+            border-collapse: separate !important; border-spacing: 0 !important;
+            border: 1px solid var(--border-color) !important;
+            border-radius: 12px !important; overflow: hidden !important;
+        }
+        table thead th {
+            background: var(--bg-header) !important; color: white !important;
+            font-size: 11px !important; font-weight: 900 !important;
+            padding: 12px !important; text-transform: uppercase !important;
+        }
+        table tbody td { padding: 10px 12px; border-bottom: 1px solid var(--border-color); font-size: 13px; }
+        tbody tr:hover td { background: var(--bg-hover); }
+
+        .badge { padding: 4px 10px; border-radius: 15px; font-size: 10px; font-weight: 800; }
+        .badge-present, .badge-approved { background: #d1fae5; color: #047857; }
+        .badge-late, .badge-pending { background: #fef3c7; color: #b45309; }
+        .badge-absent, .badge-rejected { background: #fee2e2; color: #b91c1c; }
+        .badge-leave { background: #dbeafe; color: #1d4ed8; }
+        .badge-half_day { background: #fed7aa; color: #7c2d12; }
+        .badge-type { background: #ede9fe; color: #6d28d9; }
+        .late-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #dc2626; }
+
+        /* WELCOME */
+        .welcome-card {
+            display: flex; justify-content: space-between; align-items: center; gap: 20px;
+            padding: 20px; border-radius: 18px;
+            background: var(--bg-card); border: 1px solid var(--border-color);
+            box-shadow: var(--shadow); margin-bottom: 22px; flex-wrap: wrap;
+        }
+        .welcome-info h2 { font-size: 22px; margin-bottom: 5px; }
+        .welcome-info h2 span { color: var(--primary); }
+        .welcome-info p { font-size: 12px; color: var(--text-secondary); }
+
+        /* PROFILE IMAGE UPLOAD */
+        .profile-upload-area {
+            text-align: center; margin-bottom: 20px;
+        }
+        .profile-img-large {
+            width: 120px; height: 120px; border-radius: 50%;
+            margin: 0 auto 15px; border: 4px solid var(--primary);
+            overflow: hidden; background: var(--bg-hover); display: flex;
+            align-items: center; justify-content: center;
+        }
+        .profile-img-large img { width: 100%; height: 100%; object-fit: cover; }
+        .profile-img-large i { font-size: 60px; color: var(--text-light); }
+
+        /* FILTERS */
+        .filter-bar {
+            display: flex; gap: 12px; flex-wrap: wrap;
+            padding: 15px; background: var(--bg-hover);
+            border-radius: 12px; margin-bottom: 15px;
+        }
+        .filter-bar .form-group { flex: 1; min-width: 150px; margin: 0; }
+
+        .flash { padding: 12px; border-radius: 10px; margin-bottom: 15px; font-size: 13px; }
+        .flash.success { background: #d1fae5; color: #065f46; border-left: 4px solid #10b981; }
+        .flash.error { background: #fee2e2; color: #991b1b; border-left: 4px solid #ef4444; }
+        .flash.warning { background: #fef3c7; color: #92400e; border-left: 4px solid #f59e0b; }
+
+        @media (max-width: 850px) {
+            .sidebar { transform: translateX(-100%); }
+            .sidebar.active { transform: translateX(0); }
+            .main-wrapper { margin-left: 0; }
+            .welcome-card { flex-direction: column; text-align: center; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ================= SIDEBAR ================= -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-profile-img">
+                {% if employee['profile_photo'] %}
+                    <img src="{{ url_for('static', filename='profiles/' ~ employee['profile_photo']) }}">
+                {% else %}
+                    <i class="fas fa-user"></i>
+                {% endif %}
+            </div>
+            <div class="sidebar-brand">
+                <h2>{{ session['name'] }}</h2>
+                <p>{{ session['emp_id'] }} | {{ session['department'] }}</p>
+            </div>
+        </div>
+
+        <nav class="sidebar-menu">
+            <!-- MY PROFILE ON TOP -->
+            <a href="{{ url_for('dashboard', tab='profile') }}" class="menu-item {% if tab == 'profile' %}active{% endif %}">
+                <i class="fas fa-user-cog"></i> My Profile
+            </a>
+            <a href="{{ url_for('dashboard', tab='home') }}" class="menu-item {% if tab == 'home' %}active{% endif %}">
+                <i class="fas fa-home"></i> Dashboard
+            </a>
+            <a href="{{ url_for('dashboard', tab='punch') }}" class="menu-item {% if tab == 'punch' %}active{% endif %}">
+                <i class="fas fa-fingerprint"></i> Punch In/Out
+            </a>
+            <a href="{{ url_for('dashboard', tab='attendance') }}" class="menu-item {% if tab == 'attendance' %}active{% endif %}">
+                <i class="fas fa-calendar-check"></i> My Attendance
+            </a>
+            <a href="{{ url_for('dashboard', tab='leaves') }}" class="menu-item {% if tab == 'leaves' %}active{% endif %}">
+                <i class="fas fa-umbrella-beach"></i> Apply Leave
+            </a>
+            <a href="{{ url_for('dashboard', tab='short_leave') }}" class="menu-item {% if tab == 'short_leave' %}active{% endif %}">
+                <i class="fas fa-hourglass-half"></i> Short Leave
+            </a>
+            <a href="{{ url_for('dashboard', tab='holidays') }}" class="menu-item {% if tab == 'holidays' %}active{% endif %}">
+                <i class="fas fa-calendar-star"></i> Holidays
+            </a>
+            <a href="{{ url_for('dashboard', tab='complaints') }}" class="menu-item {% if tab == 'complaints' %}active{% endif %}">
+                <i class="fas fa-comment-alt"></i> Complaints
+            </a>
+            <a href="{{ url_for('dashboard', tab='resignation') }}" class="menu-item {% if tab == 'resignation' %}active{% endif %}">
+                <i class="fas fa-door-open"></i> Resignation
+            </a>
+        </nav>
+    </aside>
+
+    <!-- ================= MAIN WRAPPER ================= -->
+    <div class="main-wrapper" id="mainWrapper">
+        <div class="top-bar">
+            <div style="display:flex; align-items:center; gap:12px;">
+                <button class="sidebar-toggle" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
+                <div style="font-weight:800; font-size:17px;">
+                    <span style="color:var(--primary);">{{ settings['company_name'] if settings else 'Osho Industries Limited' }}</span>
+                </div>
+            </div>
+
+            <div style="display:flex; gap:8px; align-items:center;">
+                <!-- Theme Change -->
+                <div style="display:flex; gap:5px; background:var(--bg-hover); padding:6px 10px; border-radius:10px;">
+                    <a href="{{ url_for('change_theme', theme='red') }}" style="width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,#e11d48,#f97316); border:2px solid white;" title="Red"></a>
+                    <a href="{{ url_for('change_theme', theme='blue') }}" style="width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,#2563eb,#3b82f6); border:2px solid white;" title="Blue"></a>
+                    <a href="{{ url_for('change_theme', theme='green') }}" style="width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,#059669,#10b981); border:2px solid white;" title="Green"></a>
+                    <a href="{{ url_for('change_theme', theme='purple') }}" style="width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,#7c3aed,#a855f7); border:2px solid white;" title="Purple"></a>
+                    <a href="{{ url_for('change_theme', theme='orange') }}" style="width:22px;height:22px;border-radius:50%;background:linear-gradient(135deg,#ea580c,#f97316); border:2px solid white;" title="Orange"></a>
+                </div>
+
+                <!-- Timer Toggle -->
+                <a href="{{ url_for('toggle_timer') }}" class="sidebar-toggle" title="Show/Hide Timer">
+                    <i class="fas fa-stopwatch"></i>
+                </a>
+
+                <!-- Dark Mode -->
+                <button class="sidebar-toggle" onclick="toggleMode()"><i class="fas fa-moon" id="modeIcon"></i></button>
+
+                <!-- Notification Bell -->
+                <div style="position:relative;">
+                    <button class="notif-bell" onclick="toggleNotif()">
+                        <i class="fas fa-bell"></i>
+                        {% if unread_count > 0 %}
+                        <span class="notif-count">{{ unread_count }}</span>
+                        {% endif %}
+                    </button>
+                    <div class="notif-dropdown" id="notifDropdown">
+                        <div class="notif-header">
+                            🔔 Notifications ({{ unread_count }})
+                            {% if my_notifications %}
+                            <a href="/mark_all_read" style="float:right;font-size:11px;color:var(--primary);">Mark all read</a>
+                            {% endif %}
+                        </div>
+                        <div style="max-height:400px; overflow-y:auto;">
+                            {% for n in my_notifications %}
+                            <a href="/mark_notification_read/{{ n['id'] }}" style="text-decoration:none;color:inherit;">
+                                <div class="notif-item {% if not n['is_read'] %}unread{% endif %}">
+                                    <div>
+                                        <strong style="display:block; font-size:12px;">{{ n['title'] }}</strong>
+                                        <span style="font-size:11px; color:var(--text-secondary);">{{ n['message'] }}</span>
+                                        <br><small style="color:var(--text-light);">{{ n['created_at'] }}</small>
+                                    </div>
+                                </div>
+                            </a>
+                            {% endfor %}
+                            {% if not my_notifications %}
+                            <div style="padding:30px; text-align:center; color:var(--text-light);">
+                                <i class="fas fa-bell-slash" style="font-size:30px;"></i><br>No notifications
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Logout -->
+                <a href="/logout" style="background:linear-gradient(135deg,#dc2626,#ef4444); color:white; padding:9px 15px; border-radius:10px; text-decoration:none; font-size:13px; font-weight:800;">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </a>
+            </div>
+        </div>
+
+        <!-- DRAGGABLE WORKING TIMER -->
+        {% if today_record and today_record['punch_in'] and not today_record['punch_out'] and employee['show_timer'] %}
+        <div id="draggableTimer">
+            <span class="timer-close" onclick="document.getElementById('draggableTimer').classList.add('hidden')"><i class="fas fa-times"></i></span>
+            <div class="timer-label">⏱️ Working Time</div>
+            <div class="timer-val" id="workingTime">00:00:00</div>
+            <div style="font-size:10px; opacity:0.8;">Since {{ today_record['punch_in'] }}</div>
+        </div>
+        {% endif %}
+
+        <div class="main-content">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+            {% for category, message in messages %}
+                <div class="flash {{ category }}">{{ message }}</div>
+            {% endfor %}
+            {% endwith %}
+                        <!-- ================= HOME TAB ================= -->
+            {% if tab == 'home' %}
+            <div class="welcome-card">
+                <div class="welcome-info">
+                    <h2>Welcome back, <span>{{ session['name'] }}</span> 👋</h2>
+                    <p><i class="fas fa-industry"></i> {{ settings['company_name'] if settings else 'Osho Industries Limited' }}</p>
+                </div>
+                <div style="text-align:right;">
+                    <div style="font-size:22px; font-weight:800; color:var(--primary);" id="mainClock"></div>
+                    <div style="font-size:12px; color:var(--text-secondary);" id="mainDate"></div>
+                </div>
+            </div>
+
+            <div class="rules-card">
+                <h3><i class="fas fa-clipboard-list"></i> Office Attendance Rules</h3>
+                <div class="rules-grid">
+                    <div class="rule-item"><i class="fas fa-check-circle"></i><div><strong>10:30-10:40 AM</strong><br><small>PRESENT (Grace)</small></div></div>
+                    <div class="rule-item"><i class="fas fa-exclamation-circle"></i><div><strong>10:41-11:00 AM</strong><br><small>LATE + Dot</small></div></div>
+                    <div class="rule-item"><i class="fas fa-times-circle"></i><div><strong>After 11:00 AM</strong><br><small>HALF DAY</small></div></div>
+                    <div class="rule-item"><i class="fas fa-circle"></i><div><strong>4 Dots = 1 Leave</strong><br><small>Salary deducted</small></div></div>
+                </div>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card stat-2">
+                    <div class="stat-icon"><i class="fas fa-calendar-check"></i></div>
+                    <div class="stat-number">{{ present_days }}</div>
+                    <div class="stat-label">Days Present</div>
+                </div>
+                <div class="stat-card stat-1">
+                    <div class="stat-icon"><i class="fas fa-business-time"></i></div>
+                    <div class="stat-number">{{ avg_hours }}</div>
+                    <div class="stat-label">Avg Working Hours</div>
+                </div>
+                <div class="stat-card stat-3">
+                    <div class="stat-icon"><i class="fas fa-circle"></i></div>
+                    <div class="stat-number">{{ late_dots }}</div>
+                    <div class="stat-label">Late Dots</div>
+                </div>
+                <div class="stat-card stat-4">
+                    <div class="stat-icon"><i class="fas fa-adjust"></i></div>
+                    <div class="stat-number">{{ half_days }}</div>
+                    <div class="stat-label">Half Days</div>
+                </div>
+            </div>
+
+            <div class="content-card">
+                <h3 class="section-title"><i class="fas fa-umbrella-beach" style="color:#f59e0b;"></i> My Leave Balance</h3>
+                <div class="leave-balance-grid">
+                    <div class="leave-balance-card casual">
+                        <i class="fas fa-briefcase"></i>
+                        <div class="leave-num">{{ leave_balance['Casual'] }}</div>
+                        <div class="leave-lab">Casual Leaves</div>
+                    </div>
+                    <div class="leave-balance-card sick">
+                        <i class="fas fa-heartbeat"></i>
+                        <div class="leave-num">{{ leave_balance['Sick'] }}</div>
+                        <div class="leave-lab">Sick Leaves</div>
+                    </div>
+                    <div class="leave-balance-card earned">
+                        <i class="fas fa-award"></i>
+                        <div class="leave-num">{{ leave_balance['Earned'] }}</div>
+                        <div class="leave-lab">Earned Leaves</div>
+                    </div>
+                    <div class="leave-balance-card emergency">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <div class="leave-num">{{ leave_balance['Emergency'] }}</div>
+                        <div class="leave-lab">Emergency</div>
+                    </div>
+                </div>
+            </div>
+
+            {% if today_record %}
+            <div class="content-card">
+                <h3 class="section-title"><i class="fas fa-clock" style="color:var(--primary);"></i> Today's Status</h3>
+                <div class="status-card">
+                    <p style="font-size:14px; margin-bottom:10px;">
+                        <strong>Punch In:</strong> {{ today_record['punch_in'] or 'N/A' }} |
+                        <strong>Punch Out:</strong> {{ today_record['punch_out'] or 'Working...' }} |
+                        <strong>Hours:</strong> {{ today_record['total_hours'] or 'Working...' }}
+                    </p>
+                    <span class="status-pill {{ today_record['status'] }}">
+                        {{ today_record['status']|upper|replace('_', ' ') }}
+                    </span>
+                </div>
+            </div>
+            {% endif %}
+            {% endif %}
+
+            <!-- ================= PROFILE TAB ================= -->
+            {% if tab == 'profile' %}
+            <div class="welcome-card">
+                <div class="welcome-info">
+                    <h2>My <span>Profile</span></h2>
+                    <p>Personal aur professional details manage karein</p>
+                </div>
+            </div>
+
+            <div class="content-card">
+                <div class="profile-upload-area">
+                    <div class="profile-img-large">
+                        {% if employee['profile_photo'] %}
+                        <img src="{{ url_for('static', filename='profiles/' ~ employee['profile_photo']) }}">
+                        {% else %}
+                        <i class="fas fa-user"></i>
+                        {% endif %}
+                    </div>
+                    <h3 style="margin-bottom:5px;">{{ employee['name'] }}</h3>
+                    <p style="color:var(--text-secondary); font-size:13px;">
+                        <i class="fas fa-id-badge"></i> {{ employee['emp_id'] }} | 
+                        <i class="fas fa-building"></i> {{ employee['department'] }}
+                    </p>
+                </div>
+
+                <form method="POST" action="{{ url_for('update_profile') }}" enctype="multipart/form-data">
+                    <div class="form-grid">
+                        <!-- LOCKED FIELDS (Admin only can edit) -->
+                        <div class="form-group">
+                            <label><i class="fas fa-lock"></i> Employee ID (Locked)</label>
+                            <input type="text" value="{{ employee['emp_id'] }}" class="locked-field" disabled>
+                        </div>
+                        <div class="form-group">
+                            <label><i class="fas fa-lock"></i> Full Name (Locked)</label>
+                            <input type="text" value="{{ employee['name'] }}" class="locked-field" disabled>
+                        </div>
+                        <div class="form-group">
+                            <label><i class="fas fa-lock"></i> Email (Locked)</label>
+                            <input type="text" value="{{ employee['email'] or '' }}" class="locked-field" disabled>
+                        </div>
+                        <div class="form-group">
+                            <label><i class="fas fa-lock"></i> Department (Locked)</label>
+                            <input type="text" value="{{ employee['department'] }}" class="locked-field" disabled>
+                        </div>
+                        <div class="form-group">
+                            <label><i class="fas fa-lock"></i> Designation (Locked)</label>
+                            <input type="text" value="{{ employee['designation'] or 'N/A' }}" class="locked-field" disabled>
+                        </div>
+                        <div class="form-group">
+                            <label><i class="fas fa-lock"></i> Joining Date (Locked)</label>
+                            <input type="text" value="{{ employee['joining_date'] or 'N/A' }}" class="locked-field" disabled>
+                        </div>
+
+                        <!-- EDITABLE FIELDS -->
+                        <div class="form-group">
+                            <label><i class="fas fa-phone"></i> Phone</label>
+                            <input type="tel" name="phone" value="{{ employee['phone'] or '' }}">
+                        </div>
+                        <div class="form-group">
+                            <label><i class="fas fa-phone-alt"></i> Emergency Contact</label>
+                            <input type="tel" name="emergency_contact" value="{{ employee['emergency_contact'] or '' }}">
+                        </div>
+                        <div class="form-group">
+                            <label><i class="fas fa-tint"></i> Blood Group</label>
+                            <select name="blood_group">
+                                <option value="">Select</option>
+                                {% for bg in ['A+','A-','B+','B-','O+','O-','AB+','AB-'] %}
+                                <option value="{{ bg }}" {% if employee['blood_group'] == bg %}selected{% endif %}>{{ bg }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label><i class="fas fa-birthday-cake"></i> Date of Birth</label>
+                            <input type="date" name="date_of_birth" value="{{ employee['date_of_birth'] or '' }}">
+                        </div>
+                        <div class="form-group" style="grid-column: 1/-1;">
+                            <label><i class="fas fa-camera"></i> Change Profile Photo</label>
+                            <input type="file" name="profile_photo" accept="image/*">
+                        </div>
+                        <div class="form-group" style="grid-column: 1/-1;">
+                            <label><i class="fas fa-map-marker-alt"></i> Address</label>
+                            <textarea name="address" rows="2">{{ employee['address'] or '' }}</textarea>
+                        </div>
+                        <div class="form-group" style="grid-column: 1/-1;">
+                            <label><i class="fas fa-info-circle"></i> Bio / About Me</label>
+                            <textarea name="bio" rows="3" placeholder="Apne baare me kuch batao...">{{ employee['bio'] or '' }}</textarea>
+                        </div>
+                    </div>
+
+                    <p style="background:#fef3c7; color:#92400e; padding:12px; border-radius:8px; margin:15px 0; font-size:12px;">
+                        <i class="fas fa-info-circle"></i> <strong>Note:</strong> Locked fields (Name, Email, Department, etc.) sirf Admin edit kar sakte hain. Contact your admin for changes.
+                    </p>
+
+                    <button type="submit" class="btn-main">
+                        <i class="fas fa-save"></i> Update Profile
+                    </button>
+                </form>
+            </div>
+            {% endif %}
+
+            <!-- ================= PUNCH TAB ================= -->
+            {% if tab == 'punch' %}
+            <div class="welcome-card">
+                <div class="welcome-info">
+                    <h2>Punch <span>In/Out</span></h2>
+                    <p>Photo capture aur location share karke attendance mark karein</p>
+                </div>
+                <div style="text-align:right;">
+                    <div style="font-size:22px; font-weight:800; color:var(--primary);" id="mainClock"></div>
+                    <div style="font-size:12px; color:var(--text-secondary);" id="mainDate"></div>
+                </div>
+            </div>
+
+            <div class="punch-card">
+                <h3 class="section-title"><i class="fas fa-camera" style="color:var(--primary);"></i> Camera & Location</h3>
+
+                <div class="camera-box">
+                    <div>
+                        <p style="font-size:12px; margin-bottom:8px; font-weight:800;"><i class="fas fa-video"></i> Live Camera</p>
+                        <video id="video" autoplay playsinline></video>
+                    </div>
+                    <div>
+                        <p style="font-size:12px; margin-bottom:8px; font-weight:800;"><i class="fas fa-image"></i> Captured</p>
+                        <img id="capturedPhoto">
+                        <canvas id="canvas" width="320" height="240"></canvas>
+                    </div>
+                </div>
+
+                <div style="text-align:center;">
+                    <button class="camera-btn capture-btn" onclick="capturePhoto()"><i class="fas fa-camera"></i> Capture</button>
+                    <button class="camera-btn retake-btn" onclick="retakePhoto()"><i class="fas fa-redo"></i> Retake</button>
+                </div>
+
+                <div class="location-info">
+                    <i class="fas fa-map-marker-alt" style="color:#ef4444;"></i>
+                    <span id="locationText">Getting location...</span>
+                </div>
+
+                <div class="punch-buttons">
+                    <form method="POST" action="/punch_in" id="punchInForm">
+                        <input type="hidden" name="photo" id="punchInPhoto">
+                        <input type="hidden" name="location" id="punchInLocation">
+                        <button type="submit" class="punch-btn punch-in-btn" {% if today_record %}disabled{% endif %}>
+                            <i class="fas fa-sign-in-alt"></i> PUNCH IN
+                        </button>
+                    </form>
+                    <form method="POST" action="/punch_out" id="punchOutForm">
+                        <input type="hidden" name="photo" id="punchOutPhoto">
+                        <input type="hidden" name="location" id="punchOutLocation">
+                        <button type="submit" class="punch-btn punch-out-btn" {% if not today_record or today_record['punch_out'] %}disabled{% endif %}>
+                            <i class="fas fa-sign-out-alt"></i> PUNCH OUT
+                        </button>
+                    </form>
+                </div>
+
+                {% if today_record %}
+                <div class="status-card">
+                    <p style="font-size:14px; margin-bottom:10px;">
+                        <strong>In:</strong> {{ today_record['punch_in'] or 'N/A' }} |
+                        <strong>Out:</strong> {{ today_record['punch_out'] or 'Working...' }} |
+                        <strong>Hours:</strong> {{ today_record['total_hours'] or 'Working...' }}
+                    </p>
+                    <span class="status-pill {{ today_record['status'] }}">{{ today_record['status']|upper|replace('_', ' ') }}</span>
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+
+            <!-- ================= ATTENDANCE WITH ADVANCED FILTERS ================= -->
+            {% if tab == 'attendance' %}
+            <div class="welcome-card">
+                <div class="welcome-info">
+                    <h2>My <span>Attendance</span></h2>
+                    <p>Advanced filters ke saath complete attendance history</p>
+                </div>
+            </div>
+
+            <div class="content-card">
+                <h3 class="section-title"><i class="fas fa-filter" style="color:var(--primary);"></i> Advanced Filters</h3>
+                <form method="GET" action="{{ url_for('dashboard', tab='attendance') }}" class="filter-bar">
+                    <div class="form-group">
+                        <label>From Date</label>
+                        <input type="date" name="from_date" value="{{ filter_from }}">
+                    </div>
+                    <div class="form-group">
+                        <label>To Date</label>
+                        <input type="date" name="to_date" value="{{ filter_to }}">
+                    </div>
+                    <div class="form-group">
+                        <label>Month</label>
+                        <input type="month" name="month" value="{{ filter_month }}">
+                    </div>
+                    <div class="form-group">
+                        <label>Year</label>
+                        <select name="year">
+                            <option value="">All Years</option>
+                            {% for yr in ['2024','2025','2026','2027'] %}
+                            <option value="{{ yr }}" {% if filter_year == yr %}selected{% endif %}>{{ yr }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Status</label>
+                        <select name="status">
+                            <option value="">All</option>
+                            <option value="present" {% if filter_status == 'present' %}selected{% endif %}>Present</option>
+                            <option value="late" {% if filter_status == 'late' %}selected{% endif %}>Late</option>
+                            <option value="half_day" {% if filter_status == 'half_day' %}selected{% endif %}>Half Day</option>
+                            <option value="leave" {% if filter_status == 'leave' %}selected{% endif %}>Leave</option>
+                            <option value="absent" {% if filter_status == 'absent' %}selected{% endif %}>Absent</option>
+                        </select>
+                    </div>
+                    <div style="align-self:end;">
+                        <button type="submit" class="btn-main"><i class="fas fa-search"></i> Apply</button>
+                        <a href="{{ url_for('dashboard', tab='attendance') }}" class="btn-main" style="background:#64748b;"><i class="fas fa-times"></i> Clear</a>
+                    </div>
+                </form>
+
+                <!-- Summary Stats -->
+                <div class="stats-grid" style="margin-top:15px;">
+                    <div class="stat-card stat-2">
+                        <div class="stat-icon"><i class="fas fa-check-circle"></i></div>
+                        <div class="stat-number">{{ present_days }}</div>
+                        <div class="stat-label">Present + Late</div>
+                    </div>
+                    <div class="stat-card stat-4">
+                        <div class="stat-icon"><i class="fas fa-adjust"></i></div>
+                        <div class="stat-number">{{ half_days }}</div>
+                        <div class="stat-label">Half Days</div>
+                    </div>
+                    <div class="stat-card stat-5">
+                        <div class="stat-icon"><i class="fas fa-umbrella-beach"></i></div>
+                        <div class="stat-number">{{ leave_days }}</div>
+                        <div class="stat-label">Leave Days</div>
+                    </div>
+                    <div class="stat-card stat-3">
+                        <div class="stat-icon"><i class="fas fa-times-circle"></i></div>
+                        <div class="stat-number">{{ absent_days }}</div>
+                        <div class="stat-label">Absent Days</div>
+                    </div>
+                    <div class="stat-card stat-6">
+                        <div class="stat-icon"><i class="fas fa-circle"></i></div>
+                        <div class="stat-number">{{ late_dots }}</div>
+                        <div class="stat-label">Late Dots</div>
+                    </div>
+                    <div class="stat-card stat-1">
+                        <div class="stat-icon"><i class="fas fa-calendar"></i></div>
+                        <div class="stat-number">{{ total_days }}</div>
+                        <div class="stat-label">Total Records</div>
+                    </div>
+                </div>
+
+                <table style="margin-top:15px;">
+                    <thead>
+                        <tr>
+                            <th>Date</th><th>Day</th><th>Punch In</th><th>Punch Out</th>
+                            <th>Hours</th><th>Dot</th><th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for r in monthly_records %}
+                        <tr>
+                            <td><strong>{{ r['date'] }}</strong></td>
+                            <td>-</td>
+                            <td>{{ r['punch_in'] or 'N/A' }}</td>
+                            <td>{{ r['punch_out'] or 'N/A' }}</td>
+                            <td>{{ r['total_hours'] or 'N/A' }}</td>
+                            <td>{% if r['late_dot'] %}<span class="late-dot"></span>{% else %}-{% endif %}</td>
+                            <td><span class="badge badge-{{ r['status'] }}">{{ r['status']|upper|replace('_', ' ') }}</span></td>
+                        </tr>
+                        {% endfor %}
+                        {% if not monthly_records %}
+                        <tr><td colspan="7" style="text-align:center;padding:30px;color:var(--text-light);">
+                            <i class="fas fa-calendar-times" style="font-size:30px;"></i><br><br>No records found
+                        </td></tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+            {% endif %}
+
+            <!-- ================= LEAVES TAB ================= -->
+            {% if tab == 'leaves' %}
+            <div class="welcome-card">
+                <div class="welcome-info">
+                    <h2>Apply <span>Leave</span></h2>
+                    <p>Leave request submit karein</p>
+                </div>
+            </div>
+
+            <div class="content-card">
+                <h3 class="section-title"><i class="fas fa-paper-plane" style="color:var(--primary);"></i> Apply for Leave</h3>
+                <form method="POST" action="/leave_request">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Leave Type</label>
+                            <select name="leave_type" required>
+                                <option value="Casual">Casual Leave</option>
+                                <option value="Sick">Sick Leave</option>
+                                <option value="Earned">Earned Leave</option>
+                                <option value="Emergency">Emergency Leave</option>
+                                <option value="Work From Home">Work From Home</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>From Date</label>
+                            <input type="date" name="from_date" required>
+                        </div>
+                        <div class="form-group">
+                            <label>To Date</label>
+                            <input type="date" name="to_date" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Reason</label>
+                        <textarea name="reason" rows="3" required></textarea>
+                    </div>
+                    <button type="submit" class="btn-main"><i class="fas fa-paper-plane"></i> Submit</button>
+                </form>
+            </div>
+
+            {% if my_leaves %}
+            <div class="content-card">
+                <h3 class="section-title"><i class="fas fa-history"></i> My Leave Requests</h3>
+                <table>
+                    <thead>
+                        <tr><th>Type</th><th>From</th><th>To</th><th>Days</th><th>Reason</th><th>Status</th></tr>
+                    </thead>
+                    <tbody>
+                        {% for l in my_leaves %}
+                        <tr>
+                            <td><span class="badge badge-type">{{ l['leave_type'] }}</span></td>
+                            <td>{{ l['from_date'] }}</td>
+                            <td>{{ l['to_date'] }}</td>
+                            <td><strong>{{ l['total_days'] }}</strong></td>
+                            <td>{{ l['reason'] }}</td>
+                            <td><span class="badge badge-{{ l['status'] }}">{{ l['status']|upper }}</span></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% endif %}
+            {% endif %}
+
+            <!-- ================= SHORT LEAVE ================= -->
+            {% if tab == 'short_leave' %}
+            <div class="welcome-card">
+                <div class="welcome-info">
+                    <h2>Short <span>Leave</span></h2>
+                    <p>Used: {{ short_leave_count }}/{{ settings['short_leave_per_month'] if settings else 1 }} this month</p>
+                </div>
+            </div>
+
+            {% if short_leave_count < (settings['short_leave_per_month'] if settings else 1) %}
+            <div class="content-card">
+                <h3 class="section-title"><i class="fas fa-hourglass-half"></i> Apply Short Leave</h3>
+                <form method="POST" action="/short_leave_request">
+                    <div class="form-grid">
+                        <div class="form-group"><label>Date</label><input type="date" name="date" required></div>
+                        <div class="form-group"><label>Start Time</label><input type="time" name="start_time" required></div>
+                        <div class="form-group"><label>End Time</label><input type="time" name="end_time" required></div>
+                    </div>
+                    <div class="form-group"><label>Reason</label><textarea name="reason" rows="3" required></textarea></div>
+                    <button type="submit" class="btn-main"><i class="fas fa-paper-plane"></i> Submit</button>
+                </form>
+            </div>
+            {% else %}
+            <div class="content-card">
+                <div style="text-align:center; padding:30px;">
+                    <i class="fas fa-exclamation-triangle" style="font-size:40px; color:#f59e0b;"></i>
+                    <h3 style="margin-top:15px;">Limit Reached</h3>
+                    <p>You have used your short leaves for this month.</p>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if my_short_leaves %}
+            <div class="content-card">
+                <h3 class="section-title"><i class="fas fa-history"></i> My Short Leaves</h3>
+                <table>
+                    <thead><tr><th>Date</th><th>Start</th><th>End</th><th>Hours</th><th>Reason</th><th>Status</th></tr></thead>
+                    <tbody>
+                        {% for sl in my_short_leaves %}
+                        <tr>
+                            <td><strong>{{ sl['date'] }}</strong></td>
+                            <td>{{ sl['start_time'] }}</td>
+                            <td>{{ sl['end_time'] }}</td>
+                            <td>{{ sl['duration_hours'] }}h</td>
+                            <td>{{ sl['reason'] }}</td>
+                            <td><span class="badge badge-{{ sl['status'] }}">{{ sl['status']|upper }}</span></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% endif %}
+            {% endif %}
+
+            <!-- ================= HOLIDAYS ================= -->
+            {% if tab == 'holidays' %}
+            <div class="welcome-card">
+                <div class="welcome-info">
+                    <h2>Upcoming <span>Holidays</span></h2>
+                </div>
+            </div>
+            <div class="content-card">
+                <table>
+                    <thead><tr><th>Date</th><th>Holiday</th><th>Type</th></tr></thead>
+                    <tbody>
+                        {% for h in holidays %}
+                        <tr>
+                            <td><strong>{{ h['date'] }}</strong></td>
+                            <td><i class="fas fa-star" style="color:#f59e0b;"></i> {{ h['name'] }}</td>
+                            <td><span class="badge badge-type">{{ h['type'] }}</span></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% endif %}
+
+            <!-- ================= COMPLAINTS ================= -->
+            {% if tab == 'complaints' %}
+            <div class="welcome-card">
+                <div class="welcome-info">
+                    <h2>Raise <span>Complaint</span></h2>
+                </div>
+            </div>
+            <div class="content-card">
+                <form method="POST" action="/raise_complaint">
+                    <div class="form-grid">
+                        <div class="form-group"><label>Subject</label><input type="text" name="subject" required></div>
+                        <div class="form-group">
+                            <label>Priority</label>
+                            <select name="priority"><option>Low</option><option selected>Medium</option><option>High</option></select>
+                        </div>
+                    </div>
+                    <div class="form-group"><label>Description</label><textarea name="description" rows="4" required></textarea></div>
+                    <button type="submit" class="btn-main"><i class="fas fa-paper-plane"></i> Submit</button>
+                </form>
+            </div>
+            {% if my_complaints %}
+            <div class="content-card">
+                <h3 class="section-title"><i class="fas fa-history"></i> My Complaints</h3>
+                {% for c in my_complaints %}
+                <div style="background:var(--bg-hover); padding:15px; border-radius:10px; margin-bottom:10px; border-left:4px solid var(--primary);">
+                    <strong>{{ c['subject'] }}</strong>
+                    <span class="badge badge-{{ c['status'] }}">{{ c['status']|upper }}</span>
+                    <p style="margin:8px 0; font-size:13px;">{{ c['description'] }}</p>
+                    {% if c['admin_reply'] %}
+                    <div style="background:var(--bg-card); padding:10px; border-radius:8px; margin-top:8px; border-left:3px solid #10b981;">
+                        <strong style="color:#10b981;">Admin Reply:</strong>
+                        <p style="font-size:12px; margin-top:5px;">{{ c['admin_reply'] }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+            {% endif %}
+
+            <!-- ================= RESIGNATION ================= -->
+            {% if tab == 'resignation' %}
+            <div class="welcome-card">
+                <div class="welcome-info">
+                    <h2>Apply <span>Resignation</span></h2>
+                </div>
+            </div>
+            {% if not my_resignations or my_resignations[0]['status'] == 'rejected' %}
+            <div class="content-card">
+                <div style="background:#fef3c7; color:#92400e; padding:12px; border-radius:8px; margin-bottom:15px;">
+                    <i class="fas fa-exclamation-triangle"></i> Please submit at least 30 days before your last working day.
+                </div>
+                <form method="POST" action="/apply_resignation">
+                    <div class="form-grid">
+                        <div class="form-group"><label>Resignation Date</label><input type="date" name="resignation_date" required></div>
+                        <div class="form-group"><label>Last Working Day</label><input type="date" name="last_working_date" required></div>
+                    </div>
+                    <div class="form-group"><label>Reason</label><textarea name="reason" rows="4" required></textarea></div>
+                    <button type="submit" class="btn-main" style="background:linear-gradient(135deg, #dc2626, #f97316);"><i class="fas fa-paper-plane"></i> Submit</button>
+                </form>
+            </div>
+            {% endif %}
+            {% if my_resignations %}
+            <div class="content-card">
+                <table>
+                    <thead><tr><th>Applied</th><th>Resign Date</th><th>Last Working</th><th>Reason</th><th>Status</th><th>Remarks</th></tr></thead>
+                    <tbody>
+                        {% for r in my_resignations %}
+                        <tr>
+                            <td>{{ r['applied_on'] }}</td>
+                            <td>{{ r['resignation_date'] }}</td>
+                            <td>{{ r['last_working_date'] }}</td>
+                            <td>{{ r['reason'] }}</td>
+                            <td><span class="badge badge-{{ r['status'] }}">{{ r['status']|upper }}</span></td>
+                            <td>{{ r['admin_remarks'] or 'Pending' }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% endif %}
+            {% endif %}
+
+        </div>
+    </div>
+
+    <script>
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('hidden');
+            document.getElementById('mainWrapper').classList.toggle('full');
+            localStorage.setItem('sbHidden', document.getElementById('sidebar').classList.contains('hidden'));
+        }
+        function toggleMode() {
+            const m = document.documentElement.getAttribute('data-mode') || 'light';
+            const nm = m === 'light' ? 'dark' : 'light';
+            document.documentElement.setAttribute('data-mode', nm);
+            localStorage.setItem('emp_mode', nm);
+            document.getElementById('modeIcon').className = nm === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+        }
+        function toggleNotif() {
+            document.getElementById('notifDropdown').classList.toggle('active');
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            const theme = '{{ employee["theme"] if employee and employee["theme"] and employee["theme"] != "default" else settings["default_theme"] if settings else "purple" }}';
+            const mode = localStorage.getItem('emp_mode') || 'light';
+            document.documentElement.setAttribute('data-theme', theme);
+            document.documentElement.setAttribute('data-mode', mode);
+            const icon = document.getElementById('modeIcon');
+            if (icon) icon.className = mode === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+
+            if (localStorage.getItem('sbHidden') === 'true') {
+                document.getElementById('sidebar').classList.add('hidden');
+                document.getElementById('mainWrapper').classList.add('full');
+            }
+        });
+
+        // MAIN CLOCK
+        function updateClock() {
+            const now = new Date();
+            const t = now.toLocaleTimeString("en-IN");
+            const d = now.toLocaleDateString("en-IN", {weekday:"long", year:"numeric", month:"long", day:"numeric"});
+            const mc = document.getElementById('mainClock');
+            const md = document.getElementById('mainDate');
+            if (mc) mc.textContent = t;
+            if (md) md.textContent = d;
+        }
+        setInterval(updateClock, 1000); updateClock();
+
+        // WORKING TIMER
+        {% if today_record and today_record['punch_in'] and not today_record['punch_out'] and employee['show_timer'] %}
+        const punchInTime = "{{ today_record['punch_in'] }}";
+        function updateWorkingTime() {
+            const now = new Date();
+            const today = now.toISOString().split('T')[0];
+            const startTime = new Date(today + 'T' + punchInTime);
+            const diff = Math.floor((now - startTime) / 1000);
+            const h = String(Math.floor(diff / 3600)).padStart(2, '0');
+            const m = String(Math.floor((diff % 3600) / 60)).padStart(2, '0');
+            const s = String(diff % 60).padStart(2, '0');
+            const wt = document.getElementById('workingTime');
+            if (wt) wt.textContent = h + ':' + m + ':' + s;
+        }
+        setInterval(updateWorkingTime, 1000); updateWorkingTime();
+
+        // DRAGGABLE TIMER
+        const timer = document.getElementById('draggableTimer');
+        if (timer) {
+            let isDragging = false, offsetX = 0, offsetY = 0;
+            timer.addEventListener('mousedown', (e) => {
+                isDragging = true;
+                offsetX = e.clientX - timer.offsetLeft;
+                offsetY = e.clientY - timer.offsetTop;
+            });
+            document.addEventListener('mousemove', (e) => {
+                if (isDragging) {
+                    timer.style.left = (e.clientX - offsetX) + 'px';
+                    timer.style.top = (e.clientY - offsetY) + 'px';
+                    timer.style.right = 'auto'; timer.style.bottom = 'auto';
+                }
+            });
+            document.addEventListener('mouseup', () => isDragging = false);
+        }
+        {% endif %}
+
+        // CAMERA
+        {% if tab == 'punch' %}
+        let photoData = null;
+        async function startCamera() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: { width: 320, height: 240, facingMode: "user" } });
+                document.getElementById("video").srcObject = stream;
+            } catch (error) { alert("Please allow camera access!"); }
+        }
+        function capturePhoto() {
+            const video = document.getElementById("video");
+            const canvas = document.getElementById("canvas");
+            const p = document.getElementById("capturedPhoto");
+            canvas.getContext("2d").drawImage(video, 0, 0, 320, 240);
+            photoData = canvas.toDataURL("image/png");
+            p.src = photoData; p.style.display = "block";
+            document.getElementById("punchInPhoto").value = photoData;
+            document.getElementById("punchOutPhoto").value = photoData;
+        }
+        function retakePhoto() {
+            photoData = null;
+            document.getElementById("capturedPhoto").style.display = "none";
+            document.getElementById("punchInPhoto").value = "";
+            document.getElementById("punchOutPhoto").value = "";
+        }
+        function getLocation() {
+            if (!navigator.geolocation) return;
+            navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                    const lat = pos.coords.latitude.toFixed(6);
+                    const lng = pos.coords.longitude.toFixed(6);
+                    const loc = `Lat: ${lat}, Lng: ${lng}`;
+                    document.getElementById("locationText").innerHTML = `📍 ${loc} | <a href="https://www.google.com/maps?q=${lat},${lng}" target="_blank" style="color:var(--primary);">Map</a>`;
+                    document.getElementById("punchInLocation").value = loc;
+                    document.getElementById("punchOutLocation").value = loc;
+                },
+                () => document.getElementById("locationText").textContent = "Location denied"
+            );
+        }
+        document.getElementById("punchInForm")?.addEventListener("submit", (e) => {
+            if (!photoData) { e.preventDefault(); alert("Please capture photo first!"); }
+        });
+        document.getElementById("punchOutForm")?.addEventListener("submit", (e) => {
+            if (!photoData) { e.preventDefault(); alert("Please capture photo first!"); }
+        });
+        startCamera(); getLocation();
+        {% endif %}
+
+        setTimeout(() => {
+            document.querySelectorAll(".flash").forEach(el => {
+                el.style.transition = "opacity 0.5s"; el.style.opacity = "0";
+                setTimeout(() => el.remove(), 500);
+            });
+        }, 4000);
+    </script>
+</body>
+</html>
